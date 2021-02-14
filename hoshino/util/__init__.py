@@ -21,8 +21,8 @@ try:
 except:
     import json
 
-
-
+import sqlite3
+from nonebot import scheduler
 
 def load_config(inbuilt_file_var):
     """
@@ -38,6 +38,27 @@ def load_config(inbuilt_file_var):
         hoshino.logger.exception(e)
         return {}
 
+
+def save_jsons(config: dict, path: str) -> bool:
+    try:
+        with open(path, 'w', encoding='utf8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as ex:
+        hoshino.logger.error(ex)
+        return False
+
+
+def load_jsons(path: str) -> dict:
+    try:
+        with open(path, mode='r', encoding='utf8') as f:
+            data = json.load(f)
+            return data
+    except Exception as ex:
+        hoshino.logger.error(
+            f'exception occured when loading config in {path}  {ex}')
+        hoshino.logger.exception(ex)
+        return {}
 
 async def delete_msg(ev: CQEvent):
     try:
@@ -179,3 +200,109 @@ def filt_message(message: Union[Message, str]):
         return message
     else:
         raise TypeError
+
+
+class jewelCounter:
+    '''
+    如何使用宝石系统
+    对某插件加上 from hoshino import jewel
+    这是触发示例:
+        try:
+            jewel_counter = jewel.jewelCounter()
+            gid = ev.group_id
+            uid = ev.user_id
+            current_jewel = jewel_counter._get_jewel(gid, uid)  获取当前宝石数 
+            jewel_counter._add_jewel(gid, uid, num) 增加num的宝石
+            jewel_counter._reduce_jewel(gid, uid, num) 减少num的宝石
+            jewel_counter._judge_jewel(gid, uid, input_jewel) 对比现有宝石与input_jewel如果前者大返回1后者大返回0 
+        except Exception as e:
+            await bot.send(ev, '错误:\n' + str(e))
+    '''
+    jewel_DB_PATH = os.path.expanduser('~/.hoshino/jewel.db')
+
+    def __init__(self):
+        os.makedirs(os.path.dirname(jewelCounter.jewel_DB_PATH), exist_ok=True)
+        self._create_table()
+    
+    def _connect(self):
+        return sqlite3.connect(jewelCounter.jewel_DB_PATH)
+
+    def _create_table(self):
+        try:
+            self._connect().execute('''CREATE TABLE IF NOT EXISTS jewelCOUNTER
+                          (GID             INT    NOT NULL,
+                           UID             INT    NOT NULL,
+                           jewel           INT    NOT NULL,
+                           PRIMARY KEY(GID, UID));''')
+        except:
+            raise Exception('创建表发生错误')
+
+    def _add_jewel(self, gid, uid, jewel):
+        try:
+            current_jewel = self._get_jewel(gid, uid)
+            conn = self._connect()
+            conn.execute("INSERT OR REPLACE INTO jewelCOUNTER (GID,UID,jewel) \
+                            VALUES (?,?,?)", (gid, uid, current_jewel + jewel))
+            conn.commit()
+        except:
+            raise Exception('更新表发生错误')
+
+    def _reduce_jewel(self, gid, uid, jewel):
+        try:
+            current_jewel = self._get_jewel(gid, uid)
+            if current_jewel >= jewel:
+                conn = self._connect()
+                conn.execute("INSERT OR REPLACE INTO jewelCOUNTER (GID,UID,jewel) \
+                            VALUES (?,?,?)", (gid, uid, current_jewel - jewel))
+                conn.commit()
+            else:
+                conn = self._connect()
+                conn.execute("INSERT OR REPLACE INTO jewelCOUNTER (GID,UID,jewel) \
+                                VALUES (?,?,?)", (gid, uid, 0))
+                conn.commit()
+        except:
+            raise Exception('更新表发生错误')
+
+    def _get_jewel(self, gid, uid):
+        try:
+            r = self._connect().execute("SELECT jewel FROM jewelCOUNTER \
+                        WHERE GID=? AND UID=?", (gid, uid)).fetchone()
+            return 0 if r is None else r[0]
+        except:
+            raise Exception('查找表发生错误')
+
+    def _judge_jewel(self, gid, uid, jewel) -> bool:
+        try:
+            current_jewel = self._get_jewel(gid, uid)
+            return current_jewel >= jewel
+        except Exception as e:
+            raise Exception(str(e))
+
+
+def add_delay_job(task, id=None, delay_time: int = 30, args=[]):
+    now = datetime.now()
+    job = scheduler.add_job(task,
+                            'date',
+                            id=id,
+                            run_date=now +
+                            datetime.timedelta(seconds=delay_time),
+                            misfire_grace_time=5,
+                            args=args)
+    return job
+
+
+def add_date_job(task, id=None, run_date=None, args=[]):
+    job = scheduler.add_job(task, 'date', id=id, run_date=run_date, args=args)
+    return job
+
+
+def add_cron_job(task, id=None, hour='*', minute='0', second='0', args=[]):
+    job = scheduler.add_job(task,
+                            'cron',
+                            id=id,
+                            hour=hour,
+                            minute=minute,
+                            second=second,
+                            misfire_grace_time=5,
+                            args=args)
+    return job
