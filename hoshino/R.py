@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 from urllib.request import pathname2url
 
 from nonebot import MessageSegment, get_bot
-from PIL import Image
+from PIL import Image, ImageFont
 import aiohttp
 
 import hoshino
@@ -12,6 +12,7 @@ from hoshino import logger, util, aiorequests
 import re
 import random
 import filetype
+
 
 class ResObj:
     def __init__(self, res_path):
@@ -76,20 +77,37 @@ class ResData(ResObj):
             hoshino.logger.error(f'未定义该类型数据处理方式：{self.Type}')
 
 
+class ResFont(ResObj):
+    def open(self, size: int) -> ImageFont:
+        return ImageFont.truetype(self.path, size)
+
+
 class TemImg(ResImg):
+
     def __init__(self, res_path, Type: str = None, for_gocq: bool = False):
         self.for_gocq = for_gocq
+        self.Type = Type
         if for_gocq:
-            self.path = res_path
+            self.gocqpath = res_path
         else:
+            suffix = os.path.splitext(res_path)
+            if suffix[1] in ('.image', '.mirai', '.null'):
+                res_path = suffix[0]
             ResObj.__init__(self, res_path)
+            self.__path = self._ResObj__path
             if not self.exist:
                 dirpath = os.path.split(self.path)[0]
                 if not os.path.exists(dirpath):
                     os.makedirs(dirpath, exist_ok=True)
-        self.Type = Type
 
-    
+    @property
+    def path(self):
+        """资源文件的路径，供bot内部使用"""
+        if self.for_gocq:
+            return self.gocqpath
+        else:
+            return os.path.join(hoshino.config.RES_DIR, self.__path)
+
     def delete(self):
         if self.exist:
             try:
@@ -104,16 +122,16 @@ class TemImg(ResImg):
         if 200 == resp.status_code:
             try:
                 if re.search(r'image', resp.headers['content-type'], re.I):
+                    content = await resp.content
+                    self.addsuffix(content=content)
                     hoshino.logger.debug(f'is image, saving to {self.path}')
-                    os.makedirs(self.path, exist_ok=True)
-                    os.rmdir(self.path)
                     with open(self.path, 'wb') as f:
-                        f.write(await resp.content)
+                        f.write(content)
                         hoshino.logger.debug('saved!')
                         return self
             except Exception as e:
                 hoshino.logger.exception(e)
-    
+
     @property
     def url(self):
         """资源文件的url，供酷Q（或其他远程服务）使用"""
@@ -121,7 +139,7 @@ class TemImg(ResImg):
             return urljoin(pathname2url(self.path))
         else:
             return urljoin(hoshino.config.RES_URL, pathname2url(self.__path))
-                
+
     @property
     def cqcode(self) -> MessageSegment:
         if self.for_gocq:
@@ -136,11 +154,24 @@ class TemImg(ResImg):
             except Exception as e:
                 hoshino.logger.exception(e)
                 return MessageSegment.text('[图片出错]')
-        
+
+    def addsuffix(self, suffix: str = None, content=None):
+        if os.path.splitext(self.path)[1]:
+            return
+        if not suffix:  # 没有指定后缀，自动识别后缀名
+            try:
+                suffix = filetype.guess_mime(
+                    content).split('/')[1]
+                self.Type = suffix
+            except:
+                raise ValueError('不是有效文件类型')
+                suffix = 'png'
+        self.__path = self.__path+'.'+suffix
 
 
 def get(path, *paths):
     return ResObj(os.path.join(path, *paths))
+
 
 def img(path, *paths):
     return ResImg(os.path.join('img', path, *paths))
@@ -157,7 +188,7 @@ def data(path, Type=None):
 
 
 def font(path, *paths):
-    return ResObj(os.path.join('font', path, *paths))
+    return ResFont(os.path.join('font', path, *paths))
 
 
 def tem_img(path, *paths):
@@ -170,9 +201,11 @@ async def tem_gocqimg(url_path, headers=None, thread_count=1):
             "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36",
             "Referer=https://www.baidu.com"
         ]
+    if 'qpic' in url_path:
+        headers[1] = "Referer=https://user.qzone.qq.com"
     res_path = await hoshino.get_bot().download_file(
         url=url_path,
         thread_count=thread_count,
         headers=headers
     )
-    return TemImg(res_path, for_gocq=True)
+    return TemImg(res_path['file'], for_gocq=True)

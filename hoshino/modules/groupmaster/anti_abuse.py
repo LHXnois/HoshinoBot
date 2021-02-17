@@ -9,8 +9,9 @@ from nonebot import Message, MessageSegment, message_preprocessor, on_command
 from nonebot.message import _check_calling_me_nickname
 
 import hoshino
-from hoshino import R, Service, util
-
+from hoshino import R, Service, util, trigger
+from hoshino.typing import CQEvent
+import copy
 '''
 from nonebot.command import CommandManager
 def parse_command(bot, cmd_str):
@@ -60,6 +61,41 @@ async def hb_handler(ctx):
                 pass
 
 '''
+from nonebot.command import CommandManager
+
+
+def parse_command(bot, cmd_str):
+    parse_command = CommandManager().parse_command(bot, cmd_str, NOTLOG=False)
+    return parse_command
+
+
+using_cmd_msg = {}
+
+
+def check_command(ev: CQEvent, msg=None) -> str:
+    event = copy.deepcopy(ev)
+    if msg:
+        while len(event.message) > 1:
+            event.message.pop()
+        event.message[0].type = "text"
+        event.message[0].data["text"] = msg
+    else:
+        msg = event.raw_message
+    if msg in using_cmd_msg:
+        return using_cmd_msg[msg]
+    event['to_me'] = False
+    _check_calling_me_nickname(hoshino.get_bot(), event)
+    for t in trigger.chain:
+        if t.find_handler(event):
+            using_cmd_msg[msg] = t.__class__.__name__
+            return t.__class__.__name__
+    if event['to_me']:
+        cmd_str = event.plain_text
+        cmd, _ = parse_command(hoshino.get_bot(), cmd_str=cmd_str, NOTLOG=True)
+        if cmd:
+            using_cmd_msg[msg] = str(cmd.name)
+            return str(cmd.name)
+
 # ============================================ #
 
 BANNED_WORD = (
@@ -74,10 +110,34 @@ async def ban_word(session):
     msg_from = str(user_id)
     if ctx['message_type'] == 'group':
         msg_from += f'@[群:{ctx["group_id"]}]'
+        if hoshino.priv.check_block_group(ctx["group_id"]):
+            return
     elif ctx['message_type'] == 'discuss':
         msg_from += f'@[讨论组:{ctx["discuss_id"]}]'
     hoshino.logger.critical(f'Self: {ctx["self_id"]}, Message {ctx["message_id"]} from {msg_from}: {ctx["message"]}')
     hoshino.priv.set_block_user(user_id, timedelta(hours=8))
-    pic = R.img(f"chieri{random.randint(1, 4)}.jpg").cqcode
+    pic = R.img(f"kkl/badword{random.randint(1, 4)}.jpg").cqcode
     await session.send(f"不理你啦！バーカー\n{pic}", at_sender=True)
-    await util.silence(session.ctx, 8*60*60)
+    await util.silence(session.ctx, 8*60*60, skip_su=False)
+
+bot = hoshino.get_bot()
+@bot.on_message('group')
+async def hb_handler(ev: CQEvent):
+    for m in ev.message:
+        if m['type'] == 'redbag':
+            title = m['data']['title']
+            break
+    else:
+        return
+    if title:
+        if check_command(ev, title):
+            group_id = ev.group_id
+            user_id = ev.user_id
+            self_id = ev.self_id
+            hoshino.priv.set_block_group(group_id, timedelta(hours=1))
+            hoshino.priv.set_block_user(user_id, timedelta(days=30))
+            msg_from = f"{user_id}@[群:{group_id}]"
+            hoshino.logger.critical(
+                f'Self: {self_id}, Message {ev["message_id"]} from {msg_from} detected as abuse: {ev.message}')
+            pic = R.img('kkl/zhenhankkl2.jpg').cqcode
+            await hoshino.get_bot().send(ev, f"{pic}\n检测到滥用行为，您的操作已被记录并加入黑名单。\nbot拒绝响应本群消息1小时")

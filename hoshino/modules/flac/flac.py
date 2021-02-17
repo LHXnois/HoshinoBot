@@ -3,9 +3,9 @@ from hoshino import Service, priv, logger, aiorequests
 from hoshino.typing import CQEvent
 from urllib.parse import quote
 
-sv = Service('flac', help_='[搜无损] +关键词搜索')
+sv = Service('flac', help_='[#搜无损] +关键词搜索')
 
-@sv.on_prefix('搜无损')
+@sv.on_prefix('搜无损', only_to_me=True)
 async def search_flac(bot, ev: CQEvent):
     keyword = ev.message.extract_plain_text()
     resp = await aiorequests.get('http://mtage.top:8099/acg-music/search', params={'title-keyword': keyword}, timeout=1)

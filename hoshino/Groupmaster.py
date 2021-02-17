@@ -20,7 +20,7 @@ class Groupmaster:
                 self.role = i
                 break
         else:
-            await self.roleupdate()
+            self.needroleupdate = True
 
     # 群员信息
     async def member_info(self, user_id: int) -> dict:
@@ -128,11 +128,14 @@ class Groupmaster:
             return roleneed == 'member'
 
     async def roleupdate(self):
+        if not self.needroleupdate:
+            return
         for i in Groupmaster.managegroups:
             Groupmaster.managegroups[i].discard(self.gid)
         self.role = await self.member_info(self.sid)['role']
         if self.role in 'owneradministrator':
             Groupmaster.managegroups[self.role].add(self.gid)
+        self.needroleupdate = False
 
     # 随机成员
     async def random_member(self) -> int:
@@ -155,6 +158,7 @@ class Groupmaster:
 
     # 管理设置
     async def admin_set(self, user_id: int, status: bool = True):
+        await self.roleupdate()
         if self.rolecheck('owner'):
             try:
                 await self.bot.set_group_admin(
@@ -164,10 +168,11 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
+                self.needroleupdate = True
 
     # 头衔申请
     async def title_set(self, user_id, title):
+        await self.roleupdate()
         if not self.rolecheck('owner'):
             try:
                 await self.bot.set_group_special_title(
@@ -177,10 +182,11 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
+                self.needroleupdate = True
 
     # 群组踢人
     async def member_kick(self, user_id: int, is_reject: bool = False):
+        await self.roleupdate()
         if self.rolecheck(await self.member_info(user_id)['role']):
             try:
                 await self.bot.set_group_kick(
@@ -190,10 +196,11 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
+                self.needroleupdate = True
 
     # 单人禁言
     async def member_silence(self, time: int, user_id: int = None, anonymous_flag: str = None):
+        await self.roleupdate()
         if self.rolecheck(
                 await self.member_info(user_id)['role'] if user_id else 'member'):
             try:
@@ -213,10 +220,11 @@ class Groupmaster:
                     )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
+                self.needroleupdate = True
 
     # 全员禁言
     async def gruop_silence(self, status: bool = True):
+        await self.roleupdate()
         if self.rolecheck('member'):
             try:
                 await self.bot.set_group_whole_ban(
@@ -225,10 +233,11 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
-
+                self.needroleupdate = True
+        
     # 群名片修改
     async def card_edit(self, user_id: int, card_text: str = ''):
+        await self.roleupdate()
         if self.rolecheck('member'):
             try:
                 await self.bot.set_group_card(
@@ -238,10 +247,11 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
+                self.needroleupdate = True
 
     # 群名修改
     async def group_name(self, name: str):
+        await self.roleupdate()
         if self.rolecheck('member'):
             try:
                 await self.bot.set_group_name(
@@ -250,10 +260,11 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
+                self.needroleupdate = True
 
     # 设置精华消息
     async def set_essence(self, msg_id: int):
+        await self.roleupdate()
         if self.rolecheck('member'):
             try:
                 await self.bot.set_essence_msg(
@@ -261,10 +272,11 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
+                self.needroleupdate = True
 
     # 发公告
     async def group_notice(self, content: str):
+        await self.roleupdate()
         if self.rolecheck('member'):
             try:
                 await self.bot._send_group_notice(
@@ -273,4 +285,4 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                await self.roleupdate()
+                self.needroleupdate = True
