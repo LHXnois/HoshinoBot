@@ -4,11 +4,12 @@ import re
 sv = Service('antiqks', help_='识破骑空士的阴谋')
 
 qks_url = ["granbluefantasy.jp"]
-qksimg = R.img('antiqks.jpg').cqcode
+qksimg1 = R.img('groupmaster/antiqks1.jpg').cqcode
+qksimg2 = R.img('groupmaster/antiqks2.jpg').cqcode
 
 @sv.on_keyword(qks_url)
 async def qks_keyword(bot, ev):
-    msg = f'骑空士爪巴\n{qksimg}'
+    msg = f'骑空士爪巴\n{qksimg1}'
     await bot.send(ev, msg, at_sender=True)
     await util.silence(ev, 60)
 
@@ -17,7 +18,7 @@ async def qks_keyword(bot, ev):
 async def qks_rex(bot, ev):
     msg = str(ev.raw_message)
     matchObj = re.search(r'[a-zA-Z0-9\.]{4,12}\/[a-zA-Z0-9]+', msg)
-    msg = f'骑空士爪巴远点\n{qksimg}'
+    msg = f'骑空士爪巴远点\n{qksimg2}'
     res = 'http://'+matchObj.group(0)
     async with aiohttp.TCPConnector(verify_ssl=False) as connector:
         async with aiohttp.request(
