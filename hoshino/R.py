@@ -2,12 +2,13 @@ import os
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
-from nonebot import MessageSegment, get_bot
-from PIL import Image, ImageFont
-import aiohttp
+from nonebot import MessageSegment
+from PIL import Image, ImageFont, ImageDraw
 
 import hoshino
-from hoshino import logger, util, aiorequests
+from hoshino import util, aiorequests
+from hoshino.config import Proxies
+from hoshino.typing import Union
 
 import re
 import random
@@ -43,7 +44,8 @@ class ResImg(ResObj):
         if hoshino.config.RES_PROTOCOL == 'http':
             return MessageSegment.image(self.url)
         elif hoshino.config.RES_PROTOCOL == 'file':
-            return MessageSegment.image(f'file:///{os.path.abspath(self.path)}')
+            return MessageSegment.image(
+                f'file:///{os.path.abspath(self.path)}')
         else:
             try:
                 return MessageSegment.image(util.pic2b64(self.open()))
@@ -69,10 +71,16 @@ class ResData(ResObj):
         if not self.Type:  # 没有指定后缀，自动识别后缀名
             try:
                 self.Type = filetype.guess_mime(self.path).split('/')[1]
-            except:
+            except Exception:
                 raise ValueError('不是有效文件类型')
         if self.Type == 'json':
             return util.load_jsons(self.path)
+        else:
+            hoshino.logger.error(f'未定义该类型数据处理方式：{self.Type}')
+
+    def write(self, content):
+        if self.Type == 'json':
+            util.save_jsons(content, self.path)
         else:
             hoshino.logger.error(f'未定义该类型数据处理方式：{self.Type}')
 
@@ -84,15 +92,19 @@ class ResFont(ResObj):
 
 class TemImg(ResImg):
 
-    def __init__(self, res_path, Type: str = None, for_gocq: bool = False):
+    def __init__(self, res_path,
+                 Type: str = None,
+                 for_gocq: bool = False,
+                 getpic=False):
         self.for_gocq = for_gocq
         self.Type = Type
         if for_gocq:
             self.gocqpath = res_path
         else:
-            suffix = os.path.splitext(res_path)
-            if suffix[1] in ('.image', '.mirai', '.null'):
-                res_path = suffix[0]
+            if not getpic:
+                suffix = os.path.splitext(res_path)
+                if suffix[1] in ('.image', '.mirai', '.null'):
+                    res_path = suffix[0]
             ResObj.__init__(self, res_path)
             self.__path = self._ResObj__path
             if not self.exist:
@@ -115,9 +127,12 @@ class TemImg(ResImg):
             except Exception as e:
                 hoshino.logger.exception(e)
 
-    async def download(self, url: str) -> None:
+    async def download(self, url: str, use_proxie=False, proxies=Proxies):
         hoshino.logger.info(f'download_tem_img from {url}')
-        resp = await aiorequests.get(url, stream=True)
+        if use_proxie:
+            resp = await aiorequests.get(url, stream=True, proxies=proxies)
+        else:
+            resp = await aiorequests.get(url, stream=True)
         hoshino.logger.debug(f'status_code={resp.status_code}')
         if 200 == resp.status_code:
             try:
@@ -143,11 +158,13 @@ class TemImg(ResImg):
     @property
     def cqcode(self) -> MessageSegment:
         if self.for_gocq:
-            return MessageSegment.image(self.path)
+            return MessageSegment.image(
+                f'file:///{os.path.abspath(self.path)}')
         elif hoshino.config.RES_PROTOCOL == 'http':
             return MessageSegment.image(self.url)
         elif hoshino.config.RES_PROTOCOL == 'file':
-            return MessageSegment.image(f'file:///{os.path.abspath(self.path)}')
+            return MessageSegment.image(
+                f'file:///{os.path.abspath(self.path)}')
         else:
             try:
                 return MessageSegment.image(util.pic2b64(self.open()))
@@ -163,7 +180,7 @@ class TemImg(ResImg):
                 suffix = filetype.guess_mime(
                     content).split('/')[1]
                 self.Type = suffix
-            except:
+            except Exception:
                 raise ValueError('不是有效文件类型')
                 suffix = 'png'
         self.__path = self.__path+'.'+suffix
@@ -191,14 +208,16 @@ def font(path, *paths):
     return ResFont(os.path.join('font', path, *paths))
 
 
-def tem_img(path, *paths):
-    return TemImg(os.path.join('tem/img', path, *paths))
+def tem_img(path, *paths, **args):
+    return TemImg(os.path.join('tem/img', path, *paths), **args)
 
 
 async def tem_gocqimg(url_path, headers=None, thread_count=1):
     if not headers:
         headers = [
-            "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36",
+            "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
+                AppleWebKit/537.36 (KHTML, like Gecko) \
+                Chrome/78.0.3904.87 Safari/537.36",
             "Referer=https://www.baidu.com"
         ]
     if 'qpic' in url_path:
@@ -209,3 +228,62 @@ async def tem_gocqimg(url_path, headers=None, thread_count=1):
         headers=headers
     )
     return TemImg(res_path['file'], for_gocq=True)
+
+
+def get_circle_pic(pic: Image, size: int, scale: int = 5) -> Image:
+    pic = pic.resize((size, size))
+    mask = Image.new('L', (size*scale, size*scale), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, size * scale, size * scale), fill=255)
+    mask = mask.resize((size, size), Image.ANTIALIAS)
+    ret_img = pic.copy()
+    ret_img.putalpha(mask)
+    return ret_img
+
+
+async def avatar(user_id: int, s: int = 100) -> TemImg:
+    apiPath = f'http://q1.qlogo.cn/g?b=qq&nk={user_id}&s={s}'
+    avatartem = await tem_gocqimg(apiPath)
+    if not avatartem.exist:
+        avatartem = tem_img(f'groupmaster/avatar/{user_id}_{s}.png')
+        if not avatartem.exist:
+            await avatartem.download(apiPath)
+    return avatartem
+
+
+def add_text(img: Image, text: str, textsize: int,
+             _f='msyh.ttf',
+             textfill='black',
+             position: tuple = (0, 0)) -> Image:
+    '''textsize 文字大小\n
+    font 字体，默认微软雅黑\n
+    textfill 文字颜色，默认黑色，black 黑色，blue蓝色，white白色，yellow黄色，red红色\n
+    position 文字偏移（0,0）位置，图片左上角为起点，第一个数是宽方向，第二个数是高方向'''
+    _font = font(_f).open(textsize)
+    draw = ImageDraw.Draw(img)
+    draw.text(xy=position, text=text, font=_font, fill=textfill)
+    return img
+
+
+def textline2pic(text: str, textsize: int, textfill='black', t=255) -> Image:
+    length = util.tlen(text, textsize)
+    dsc = Image.new('RGBA', (length, textsize), (255, 255, 255, t))
+    img = add_text(dsc, text, textsize, 'simhei.ttf', textfill)
+    return img
+
+
+def text2pic(text: Union[list, str],
+             textsize: int = 20,
+             textfill='black',
+             t=255) -> Image:
+    pics = []
+    if type(text) is list:
+        for i in text:
+            pics.append(text2pic(i, textsize, textfill, t))
+    elif type(text) is Image:
+        pics.append(text)
+    else:
+        text = text.split('\n')
+        for i in text:
+            pics.append(textline2pic(i, textsize, textfill, t))
+    return util.concat_pic(pics, 0, t)
