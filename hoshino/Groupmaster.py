@@ -5,7 +5,8 @@ import random
 
 
 class Groupmaster:
-    managegroups = {'owner': set(), 'admin': set(), 'administrator': set()}
+    managegroups = {'default': {'role': 'member', 'needroleupdate': True}}
+    PRIV_NOT_ENOUGH = 1000
 
     def __init__(self, ev: CQEvent = None, self_id: int = 0, group_id: int = 0):
         self.bot = hoshino.get_bot()
@@ -15,15 +16,15 @@ class Groupmaster:
         else:
             self.sid = ev.self_id
             self.gid = ev.group_id
-        for i in Groupmaster.managegroups:
-            if self.gid in Groupmaster.managegroups[i]:
-                self.role = i
-                break
+        mg = Groupmaster.managegroups
+        if self.gid in mg:
+            self.role = mg[self.gid]['role']
         else:
-            self.needroleupdate = True
+            mg[self.gid] = mg['default']
+        self.privs = mg[self.gid]
 
     # 群员信息
-    async def member_info(self, user_id: int) -> dict:
+    async def member_info(self, user_id: int, key: str = None):
         '''info内容
             group_id	int64	群号
             user_id	int64	QQ 号
@@ -47,6 +48,8 @@ class Groupmaster:
                 user_id=user_id,
                 no_cache=True
             )
+            if key:
+                return info[key]
             return info
         except Exception as e:
             hoshino.logger.exception(e)
@@ -67,7 +70,7 @@ class Groupmaster:
             return []
 
     # 群荣誉信息
-    async def honor_info(self, honor_type: str) -> dict:
+    async def honor_info(self, honor_type: str, key: str = None) -> dict:
         '''响应数据
             group_id	int64	群号
             current_talkative	object	当前龙王, 仅 type 为 talkative 或 all 时有数据
@@ -94,13 +97,15 @@ class Groupmaster:
                 group_id=self.gid,
                 type=honor_type
             )
+            if key:
+                return gh_info[key]
             return gh_info
         except Exception as e:
             hoshino.logger.exception(e)
             return {}
 
     # 获取vip信息
-    async def vip_info(self, user_id: int) -> dict:
+    async def vip_info(self, user_id: int, key: str = None) -> dict:
         '''info 内容
             user_id	int64	QQ 号
             nickname	string	用户昵称
@@ -114,12 +119,15 @@ class Groupmaster:
             info = await self.bot._get_vip_info(
                 user_id=user_id
             )
+            if key:
+                return info[key]
             return info
         except Exception as e:
             hoshino.logger.exception(e)
             return {}
 
-    def rolecheck(self, roleneed: str):
+    async def rolecheck(self, roleneed: str):
+        await self.roleupdate()
         if self.role == 'owner':
             return True
         elif self.role == 'member':
@@ -128,38 +136,19 @@ class Groupmaster:
             return roleneed == 'member'
 
     async def roleupdate(self):
-        if not self.needroleupdate:
-            return
-        for i in Groupmaster.managegroups:
-            Groupmaster.managegroups[i].discard(self.gid)
-        self.role = await self.member_info(self.sid)['role']
-        if self.role in 'owneradministrator':
-            Groupmaster.managegroups[self.role].add(self.gid)
-        self.needroleupdate = False
+        if self.privs['needroleupdate']:
+            self.role = await self.member_info(self.sid, 'role')
+            self.privs['role'] = self.role
+            self.privs['needroleupdate'] = False
 
     # 随机成员
     async def random_member(self) -> int:
         ml = await self.member_list()
         return random.choice(ml)
 
-    # 头衔
-    async def title_get(self, user_id: int) -> str:
-        return await self.member_info(user_id)['title']
-
-    # 头像
-    async def avatar(self, user_id: int, s: int = 100) -> R.TemImg:
-        apiPath = f'http://q1.qlogo.cn/g?b=qq&nk={user_id}&s={s}'
-        avatartem = await R.tem_gocqimg(apiPath)
-        if not avatartem.exist:
-            avatartem = R.tem_img(f'groupmaster/avatar/{user_id}_{s}.png')
-            if not avatartem.exist:
-                await avatartem.download(apiPath)
-        return avatartem
-
     # 管理设置
     async def admin_set(self, user_id: int, status: bool = True):
-        await self.roleupdate()
-        if self.rolecheck('owner'):
+        if await self.rolecheck('owner'):
             try:
                 await self.bot.set_group_admin(
                     group_id=self.gid,
@@ -168,12 +157,14 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
+                self.privs['needroleupdate'] = False
+        else:
+            self.privs['needroleupdate'] = False
+            return Groupmaster.PRIV_NOT_ENOUGH
 
     # 头衔申请
     async def title_set(self, user_id, title):
-        await self.roleupdate()
-        if not self.rolecheck('owner'):
+        if await self.rolecheck('owner'):
             try:
                 await self.bot.set_group_special_title(
                     group_id=self.gid,
@@ -182,12 +173,14 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
+                self.privs['needroleupdate'] = False
+        else:
+            self.privs['needroleupdate'] = False
+            return Groupmaster.PRIV_NOT_ENOUGH
 
     # 群组踢人
     async def member_kick(self, user_id: int, is_reject: bool = False):
-        await self.roleupdate()
-        if self.rolecheck(await self.member_info(user_id)['role']):
+        if await self.rolecheck(await self.member_info(user_id, 'role')):
             try:
                 await self.bot.set_group_kick(
                     group_id=self.gid,
@@ -196,13 +189,15 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
+                self.privs['needroleupdate'] = False
+        else:
+            self.privs['needroleupdate'] = False
+            return Groupmaster.PRIV_NOT_ENOUGH
 
     # 单人禁言
     async def member_silence(self, time: int, user_id: int = None, anonymous_flag: str = None):
-        await self.roleupdate()
-        if self.rolecheck(
-                await self.member_info(user_id)['role'] if user_id else 'member'):
+        if await self.rolecheck(
+                await self.member_info(user_id, 'role') if user_id else 'member'):
             try:
                 if anonymous_flag:
                     await self.bot.set_group_anonymous_ban(
@@ -220,12 +215,14 @@ class Groupmaster:
                     )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
+                self.privs['needroleupdate'] = False
+        else:
+            self.privs['needroleupdate'] = False
+            return Groupmaster.PRIV_NOT_ENOUGH
 
     # 全员禁言
-    async def gruop_silence(self, status: bool = True):
-        await self.roleupdate()
-        if self.rolecheck('member'):
+    async def group_silence(self, status: bool = True):
+        if await self.rolecheck('member'):
             try:
                 await self.bot.set_group_whole_ban(
                     group_id=self.gid,
@@ -233,12 +230,14 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
-        
+                self.privs['needroleupdate'] = False
+        else:
+            self.privs['needroleupdate'] = False
+            return Groupmaster.PRIV_NOT_ENOUGH
+
     # 群名片修改
-    async def card_edit(self, user_id: int, card_text: str = ''):
-        await self.roleupdate()
-        if self.rolecheck('member'):
+    async def card_set(self, user_id: int, card_text: str = ''):
+        if await self.rolecheck('member'):
             try:
                 await self.bot.set_group_card(
                     group_id=self.gid,
@@ -247,12 +246,13 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
+                self.privs['needroleupdate'] = False
+        else:
+            return Groupmaster.PRIV_NOT_ENOUGH
 
     # 群名修改
-    async def group_name(self, name: str):
-        await self.roleupdate()
-        if self.rolecheck('member'):
+    async def groupname_set(self, name: str):
+        if await self.rolecheck('member'):
             try:
                 await self.bot.set_group_name(
                     group_id=self.gid,
@@ -260,24 +260,28 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
+                self.privs['needroleupdate'] = False
+        else:
+            self.privs['needroleupdate'] = False
+            return Groupmaster.PRIV_NOT_ENOUGH
 
     # 设置精华消息
-    async def set_essence(self, msg_id: int):
-        await self.roleupdate()
-        if self.rolecheck('member'):
+    async def essence_set(self, msg_id: int):
+        if await self.rolecheck('member'):
             try:
                 await self.bot.set_essence_msg(
                     message_id=msg_id
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
+                self.privs['needroleupdate'] = False
+        else:
+            self.privs['needroleupdate'] = False
+            return Groupmaster.PRIV_NOT_ENOUGH
 
     # 发公告
     async def group_notice(self, content: str):
-        await self.roleupdate()
-        if self.rolecheck('member'):
+        if await self.rolecheck('member'):
             try:
                 await self.bot._send_group_notice(
                     group_id=self.gid,
@@ -285,4 +289,7 @@ class Groupmaster:
                 )
             except Exception as e:
                 hoshino.logger.exception(e)
-                self.needroleupdate = True
+                self.privs['needroleupdate'] = False
+        else:
+            self.privs['needroleupdate'] = False
+            return Groupmaster.PRIV_NOT_ENOUGH
