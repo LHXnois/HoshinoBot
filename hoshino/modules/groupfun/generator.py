@@ -114,12 +114,12 @@ async def friend(bot, ev: CQEvent):
     if not is_at:
         try:
             arr = data[f'{ev.group_id}']
-        except:
+        except Exception:
             arr = await Gm(ev).member_list()
     match = ev['match']
     msg = match.group('kw')
     msg = msg.replace('他', '我').replace('她', '我')
-    image = await Gm(ev).avatar(choice(arr))
+    image = await R.avatar(choice(arr))
     image = image.open()
     img_origin = Image.new('RGBA', (100, 100), (255, 255, 255))
     scale = 3
@@ -149,19 +149,6 @@ async def friend(bot, ev: CQEvent):
     await bot.send(ev, str(MessageSegment.image(pic2b64(image_back))))
 
 
-def get_circle_avatar(avatar, size):
-    #avatar.thumbnail((size, size))
-    avatar = avatar.resize((size, size))
-    scale = 5
-    mask = Image.new('L', (size*scale, size*scale), 0)
-    draw = ImageDraw.Draw(mask)
-    draw.ellipse((0, 0, size * scale, size * scale), fill=255)
-    mask = mask.resize((size, size), Image.ANTIALIAS)
-    ret_img = avatar.copy()
-    ret_img.putalpha(mask)
-    return ret_img
-
-
 @sv.on_prefix(('rua', '搓'), only_to_me=True)
 async def rua(bot, ev: CQEvent):
     is_at = False
@@ -173,21 +160,44 @@ async def rua(bot, ev: CQEvent):
     if not is_at:
         arr.append(ev.self_id)
         arr.append(ev.user_id)
-    avatar_origin = (await Gm(ev).avatar(choice(arr), 160)).open()
-    avatar_origin = get_circle_avatar(avatar_origin, 350)
-    avatar_size = [(350, 350), (438, 280), (500, 245), (467, 263), (350, 350)]
-    avatar_pos = [(50, 150), (40, 180), (50, 200), (30, 180), (50, 150)]
+    avatar_origin = (await R.avatar(choice(arr), 160)).open()
+    avatar_origin = R.get_circle_pic(avatar_origin, 350)
+    avatar_size = [(350, 350), (372, 305), (395, 283), (380, 305), (350, 372)]
+    avatar_pos = [(50, 100), (28, 145), (5, 167), (5, 145), (50, 78)]
+    hand_pos = (0, -50)
     imgs = []
     for i in range(5):
-        im = R.img('groupfun/generator', f'rua/hand-{i+1}.png').open()
+        im = Image.new(mode='RGBA', size=(500, 500))
         hand = R.img('groupfun/generator', f'rua/hand-{i+1}.png').open()
         hand = hand.convert('RGBA')
         avatar = avatar_origin.copy()
         avatar = avatar.resize(avatar_size[i])
         im.paste(avatar, avatar_pos[i], mask=avatar.split()[3])
-        im.paste(hand, mask=hand.split()[3])
+        im.paste(hand, hand_pos, mask=hand.split()[3])
+        mask = im.split()[3]
+        mask = Image.eval(mask, lambda a: 255 if a <= 50 else 0)
+        # maskpath = R.img('groupfun/generator', f'rua/mask-{i+1}.jpg').path
+        # mask.save(maskpath)
+        # mask = R.img('groupfun/generator', f'rua/mask-{i+1}.jpg').open()
+        im = im.convert('RGB').convert('P', palette=Image.ADAPTIVE, colors=255)
+        im.paste(255, mask)
         imgs.append(im)
     result = R.tem_img('groupfun/generator', 'rua/output.gif')
-    imgs[0].save(fp=result.path, save_all=True, append_images=imgs[1:],
-                 loop=0, transparency=0, disposal=2)
+    imgs[0].save(fp=result.path, save_all=True, append_images=imgs,
+                 loop=0, duration=10, quality=80, transparency=255, disposal=3)
     await bot.send(ev, result.cqcode)
+
+
+@sv.on_keyword(('报时', '几点了', '现在几点', '几点钟啦', '几点啦'), only_to_me=True)
+async def showtime(bot, ev):
+    now = datetime.datetime.now()
+    hour = now.hour
+    minute = now.minute
+    hour_str = f' {hour}' if hour < 10 else str(hour)
+    minute_str = f' {minute}' if minute < 10 else str(minute)
+    originpic = R.img('groupfun/generator/nowtime.jpg').open()
+    outputpic = R.tem_img('groupfun/generator/nowtime.jpg')
+    img = R.add_text(originpic, f'{hour_str}点{minute_str}分',
+                     textsize=95, textfill='black', position=(305, 255))
+    img.save(outputpic.path)
+    await bot.send(ev, outputpic.cqcode, at_sender=False)
