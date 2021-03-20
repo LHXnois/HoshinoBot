@@ -2,9 +2,10 @@ import logging
 import os
 import sys
 
-os.makedirs('./log', exist_ok=True)
-_error_log_file = os.path.expanduser('./log/error.log')
-_critical_log_file = os.path.expanduser('./log/critical.log')
+LOG_DIR = os.path.expanduser('~/.hoshino/log')
+os.makedirs(LOG_DIR, exist_ok=True)
+_error_log_file = os.path.join(LOG_DIR, 'error.log')
+_critical_log_file = os.path.join(LOG_DIR, 'critical.log')
 
 formatter = logging.Formatter('[%(asctime)s %(name)s] %(levelname)s: %(message)s')
 default_handler = logging.StreamHandler(sys.stdout)
