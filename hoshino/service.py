@@ -349,6 +349,7 @@ class Service:
                     await asyncio.sleep(interval_time)
                     msg = randomiser(msg) if randomiser else msg
                     await bot.send_group_msg(self_id=random.choice(selfids), group_id=gid, message=msg)
+                    await asyncio.sleep(0.1)
                 l = len(msgs)
                 if l:
                     self.logger.info(f"群{gid} 投递{TAG}成功 共{l}条消息")
