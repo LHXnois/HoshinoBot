@@ -1,17 +1,13 @@
 import random
-import requests
 import pytz
-import json
-import os
-from datetime import datetime
 from nonebot import on_command
-from urllib import parse
 from hoshino import R, Service, priv, util
 from hoshino.typing import NoticeSession
 
 
 # basic function for debug, not included in Service('chat')
-@on_command('zai?', aliases=('在?', '在？', '在吗', '在么？', '在嘛', '在嘛？'), only_to_me=True)
+@on_command('zai?', aliases=('在?', '在？', '在吗',
+                             '在么？', '在嘛', '在嘛？'), only_to_me=True)
 async def say_hello(session):
     await session.send('はい！私はいつも貴方の側にいますよ！')
 
@@ -48,10 +44,17 @@ async def chat_laogong(bot, ev):
 
 @sv.on_fullmatch(('mua', '么', '么么', '么么哒', 'mua~'), only_to_me=True)
 async def chat_mua(bot, ev):
-    if random.random() < 0.5:
+    if random.random() < 0.5 or priv.check_priv(ev, priv.PYUSER):
         await bot.send(ev, 'mua~')
+    elif random.random() < 0.01:
+        await bot.send(ev, R.img('groupfun/chat', 'geng/dabendan.jpg').cqcode)
     else:
         await bot.send(ev, '笨蛋~', at_sender=True)
+
+
+@sv.on_fullmatch(('要抱抱'))
+async def hug(bot, ev):
+    await bot.send(ev, R.img('kkl/baobao.jpg').cqcode)
 
 
 @sv.on_fullmatch('来点星奏')
@@ -107,17 +110,24 @@ async def chat_gaishuile(bot, ev):
 
 @sv.on_fullmatch(('会战警察来了'))
 async def chat_huizhanjingcha(bot, ev):
-    await bot.send(ev, R.img('groupfun/chat', f'geng/会战警察{random.randint(1, 3)}.jpg').cqcode)
+    await bot.send(ev, R.img(
+        'groupfun/chat', f'geng/会战警察{random.randint(1, 3)}.jpg').cqcode)
 
 
 @sv.on_fullmatch(('xp调查', 'xp调研'), only_to_me=True)
 async def chat_xpdiaocha(bot, ev):
-    await bot.send(ev, R.img(f'priconne/tips/xpdiaocha{random.randint(1, 2)}.jpg').cqcode)
+    await bot.send(
+        ev, R.img(f'priconne/tips/xpdiaocha{random.randint(1, 2)}.jpg').cqcode)
 
 
 @sv.on_fullmatch(('泡面', '给我泡碗面', '泡碗面'), only_to_me=True)
 async def chat_paomian(bot, ev):
     await bot.send(ev, R.img('kkl/paomian.gif').cqcode)
+
+
+@sv.on_fullmatch(('钓鱼6分钟'), only_to_me=True)
+async def chat_diaoyu6(bot, ev):
+    await bot.send(ev, R.img('groupfun/chat', 'geng/diaoyu6.gif').cqcode)
 
 
 @sv.on_fullmatch(('跳舞', 'dance'), only_to_me=True)
@@ -132,19 +142,21 @@ async def chat_hensin(bot, ev):
 
 @sv.on_fullmatch(('猜拳', '石头剪刀布'), only_to_me=True)
 async def chat_caiquan(bot, ev):
-    #await bot.send(ev, f'[CQ:rps]')
+    # await bot.send(ev, f'[CQ:rps]')
     caiquan = ('石头！', '剪刀！', '布！', '✊', '✌', '🖐')
     await bot.send(ev, f'{random.choice(caiquan)}')
 
 
 @sv.on_fullmatch(('你怎么想', '你怎么看', '你觉得呢'), only_to_me=True)
 async def chat_wjd(bot, ev):
-    await bot.send(ev, R.img('groupfun/chat', f'wjuede/wjd{random.randint(1,10)}.jpg').cqcode)
+    await bot.send(ev, R.img(
+        'groupfun/chat', f'wjuede/wjd{random.randint(1,10)}.jpg').cqcode)
 
 
 @sv.on_fullmatch(('答一下', '回答一下', '咋办啊', '咋整啊', '优质解答'), only_to_me=True)
 async def chat_yzjd(bot, ev):
-    await bot.send(ev, R.img('groupfun/chat', f'yzjd/yzjd{random.randint(1,4)}.jpg').cqcode)
+    await bot.send(ev, R.img(
+        'groupfun/chat', f'yzjd/yzjd{random.randint(1,4)}.jpg').cqcode)
 
 
 @sv.on_fullmatch(('不愧是你', '不愧是我', 'bksn', 'bksw'))
@@ -162,31 +174,36 @@ async def chat_nimenhao(bot, ev):
 @sv.on_fullmatch(('不要以为这样就赢了'))
 async def chat_woshule(bot, ev):
     if random.random() < 0.5:
-        await bot.send(ev, R.img('groupfun/chat', 'taowa/不要以为这样就赢了.jpg').cqcode)
+        await bot.send(ev, R.img(
+            'groupfun/chat', 'taowa/不要以为这样就赢了.jpg').cqcode)
 
 
 @sv.on_fullmatch(('彳亍', '行', '行吧'))
 async def chat_xing(bot, ev):
     if random.random() < 0.1:
-        await bot.send(ev, R.img('groupfun/chat', 'taowa/taowaxing.jpg').cqcode)
+        await bot.send(ev, R.img(
+            'groupfun/chat', 'taowa/taowaxing.jpg').cqcode)
 
 
 @sv.on_fullmatch(('觉了', '妈的绝了', '妈的觉了', '绝了'))
 async def chat_juele(bot, ev):
     if random.random() < 0.1:
-        await bot.send(ev, R.img('groupfun/chat', f'taowa/juele{random.randint(1, 9)}.jpg').cqcode)
+        await bot.send(ev, R.img(
+            'groupfun/chat', f'taowa/juele{random.randint(1, 9)}.jpg').cqcode)
 
 
 @sv.on_fullmatch(('酸', '酸了', '不过如此', 'xmsl', 'xmswl'))
 async def chat_suanle(bot, ev):
     if random.random() < 0.1:
-        await bot.send(ev, R.img('groupfun/chat', f'suan/suan{random.randint(1, 6)}.jpg').cqcode)
+        await bot.send(ev, R.img(
+            'groupfun/chat', f'suan/suan{random.randint(1, 6)}.jpg').cqcode)
 
 
 @sv.on_fullmatch(('火星'))
 async def chat_huoxing(bot, ev):
     if random.random() < 0.1:
-        await bot.send(ev, R.img('groupfun/chat', f'huoxing/火星{random.randint(1, 7)}.jpg').cqcode)
+        await bot.send(ev, R.img(
+            'groupfun/chat', f'huoxing/火星{random.randint(1, 7)}.jpg').cqcode)
 
 
 @sv.on_fullmatch(('sb春黑刀'))
@@ -219,7 +236,8 @@ async def chat_azhe(bot, ev):
 async def chat_cao(bot, ev):
     rtest = random.random()
     if rtest < 0.2:
-        await bot.send(ev, R.img('groupfun/chat', f'taowa/cao{random.randint(1, 2)}.jpg').cqcode)
+        await bot.send(ev, R.img(
+            'groupfun/chat', f'taowa/cao{random.randint(1, 2)}.jpg').cqcode)
     elif rtest < 0.3:
         await bot.send(ev, '草')
     elif rtest < 0.4:
@@ -260,7 +278,8 @@ async def chat_wenhao(bot, ev):
 @sv.on_keyword(('sonet', '搜内', '骚内', '馊内'))
 async def chat_sonet(bot, ctx):
     if random.random() < 0.05:
-        await bot.send(ctx, R.img('groupfun/chat', f'sonet{random.randint(1, 2)}.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', f'sonet{random.randint(1, 2)}.jpg').cqcode)
 
 
 @sv.on_keyword(('有作业吗'))
@@ -272,7 +291,8 @@ async def chat_zuoye(bot, ctx):
 @sv.on_keyword(('蓝绿修改器'))
 async def chat_xiugaiqi(bot, ctx):
     if random.random() < 0.15:
-        await bot.send(ctx, R.img('groupfun/chat', f'geng/修改器{random.randint(1, 3)}.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', f'geng/修改器{random.randint(1, 3)}.jpg').cqcode)
 
 
 @sv.on_keyword(('我是萌新'))
@@ -313,7 +333,8 @@ async def chat_yongxiongbuneng(bot, ctx):
 @sv.on_keyword(('auto', '凹凸'))
 async def chat_wtmauto(bot, ctx):
     if random.random() < 0.05:
-        await bot.send(ctx, R.img('groupfun/chat', 'geng/wtmzjauto.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', 'geng/wtmzjauto.jpg').cqcode)
 
 
 @sv.on_keyword(('毒池'))
@@ -343,7 +364,8 @@ async def chat_xdlf(bot, ctx):
 @sv.on_keyword(('确实', '有一说一', 'u1s1', 'yysy'))
 async def chat_queshi(bot, ctx):
     if random.random() < 0.1:
-        await bot.send(ctx, R.img('groupfun/chat', f'taowa/qs{random.randint(1, 6)}.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', f'taowa/qs{random.randint(1, 6)}.jpg').cqcode)
 
 
 @sv.on_keyword(('优依说一', 'yui说一', 'yui:1', 'yui：1', '优衣说一'))
@@ -365,39 +387,48 @@ async def chat_weisha(bot, ctx):
     if random.random() < 0.05:
         await bot.send(ctx, R.img('groupfun/chat', 'taowa/weisha.jpg').cqcode)
     elif random.random() < 0.05:
-        await bot.send(ctx, R.img('groupfun/chat', f'yzjd/yzjd{random.randint(1,4)}.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', f'yzjd/yzjd{random.randint(1,4)}.jpg').cqcode)
 
 
 @sv.on_keyword(('内鬼'))
 async def chat_neigui(bot, ctx):
     if random.random() < 0.3:
-        await bot.send(ctx, R.img('groupfun/chat', 'taowa/wuneigui.jpg').cqcode)
+        await bot.send(
+            ctx, R.img('groupfun/chat', 'taowa/wuneigui.jpg').cqcode)
 
 
 @sv.on_keyword(('+19', '九银一金', '9银1金', '19母'))
 async def chat_jia19(bot, ctx):
     if random.random() < 0.05:
-        await bot.send(ctx, R.img('groupfun/chat', f'+19/19{random.randint(1, 5)}.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', f'+19/19{random.randint(1, 5)}.jpg').cqcode)
 
 
 @sv.on_keyword(('挂树', '树上'))
 async def chat_guashu(bot, ctx):
     if random.random() < 0.05:
-        await bot.send(ctx, R.img('groupfun/chat', f'geng/guashu{random.randint(1, 2)}.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', f'geng/guashu{random.randint(1, 2)}.jpg').cqcode)
 
 
 @sv.on_keyword(('会战'))
 async def chat_clanba(bot, ctx):
     if random.random() < 0.001:
-        await bot.send(ctx, R.img('groupfun/chat', 'geng/我的天啊你看看都几度了.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', 'geng/我的天啊你看看都几度了.jpg').cqcode)
     elif random.random() < 0.001:
-        await bot.send(ctx, R.img('groupfun/chat', 'geng/我的天啊你看看都几点了.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', 'geng/我的天啊你看看都几点了.jpg').cqcode)
     elif random.random() < 0.001:
-        await bot.send(ctx, R.img('groupfun/chat', 'geng/我要打团战zzz.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', 'geng/我要打团战zzz.jpg').cqcode)
     elif random.random() < 0.001:
-        await bot.send(ctx, R.img('groupfun/chat', 'geng/buxiangdahuiz.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', 'geng/buxiangdahuiz.jpg').cqcode)
     elif random.random() < 0.001:
-        await bot.send(ctx, R.img('groupfun/chat', 'kuaijiehuifu/huizhan.jpg').cqcode)
+        await bot.send(ctx, R.img(
+            'groupfun/chat', 'kuaijiehuifu/huizhan.jpg').cqcode)
 
 
 nyb_player = f'''{R.img('groupfun/chat', 'geng/newyearburst.gif').cqcode}
@@ -483,7 +514,8 @@ async def kuaijiehuifu(bot, ev):
     }
     if s in quickreplylist:
         msg.append(
-            str(R.img('groupfun/chat', f'kuaijiehuifu/{quickreplylist[s]}').cqcode))
+            str(R.img(
+                'groupfun/chat', f'kuaijiehuifu/{quickreplylist[s]}').cqcode))
     else:
         msg.append("现在的快捷回复有")
         for i in quickreplylist:
@@ -499,10 +531,11 @@ async def pokepoke(session: NoticeSession):
     if session.event.target_id != session.event.self_id:
         return
     user_id = session.event.user_id
-    await session.send(f'[CQ:poke,qq={user_id}]')
-    ''' if random.random() < 0.5:
+    if random.random() < 0.5:
+        await session.send(f'[CQ:poke,qq={user_id}]')
+    elif random.random() < 0.5:
         await session.send('?主人有什么事吗')
     elif random.random() < 0.5:
         await session.send('请...请不要这样...')
     else:
-        await session.send('呀！...请...请不要玩弄在下...') '''
+        await session.send('呀！...请...请不要玩弄在下...')
