@@ -4,12 +4,11 @@
 import random
 from datetime import timedelta
 
-import nonebot
-from nonebot import Message, MessageSegment, message_preprocessor, on_command
+from nonebot import on_command
 from nonebot.message import _check_calling_me_nickname
 
 import hoshino
-from hoshino import R, Service, util, trigger
+from hoshino import R, util, trigger
 from hoshino.typing import CQEvent
 import copy
 '''
@@ -64,8 +63,8 @@ async def hb_handler(ctx):
 from nonebot.command import CommandManager
 
 
-def parse_command(bot, cmd_str):
-    parse_command = CommandManager().parse_command(bot, cmd_str, NOTLOG=False)
+def parse_command(bot, cmd_str, NOTLOG=False):
+    parse_command = CommandManager().parse_command(bot, cmd_str, NOTLOG)
     return parse_command
 
 
@@ -86,23 +85,28 @@ def check_command(ev: CQEvent, msg=None) -> str:
     event['to_me'] = False
     _check_calling_me_nickname(hoshino.get_bot(), event)
     for t in trigger.chain:
-        if t.find_handler(event):
+        if sf := t.find_handler(event):
+            if sf.only_to_me and not event['to_me']:
+                continue
             using_cmd_msg[msg] = t.__class__.__name__
             return t.__class__.__name__
-    if event['to_me']:
-        cmd_str = event.plain_text
-        cmd, _ = parse_command(hoshino.get_bot(), cmd_str=cmd_str, NOTLOG=True)
-        if cmd:
-            using_cmd_msg[msg] = str(cmd.name)
-            return str(cmd.name)
+    cmd_str = event.plain_text
+    cmd, _ = parse_command(hoshino.get_bot(), cmd_str=cmd_str, NOTLOG=True)
+    if cmd:
+        using_cmd_msg[msg] = str(cmd.name)
+        return str(cmd.name)
 
 # ============================================ #
+
 
 BANNED_WORD = (
     'rbq', 'RBQ', '憨批', '废物', '死妈', '崽种', '傻逼', '傻逼玩意',
     '没用东西', '傻B', '傻b', 'SB', 'sb', '煞笔', 'cnm', '爬', 'kkp',
-    'nmsl', 'D区', '口区', '我是你爹', 'nmbiss', '弱智', '给爷爬', '杂种爬','爪巴'
+    'nmsl', 'D区', '口区', '我是你爹', 'nmbiss', '弱智', '给爷爬', '杂种爬',
+    '爪巴'
 )
+
+
 @on_command('ban_word', aliases=BANNED_WORD, only_to_me=True)
 async def ban_word(session):
     ctx = session.ctx
@@ -121,10 +125,13 @@ async def ban_word(session):
     await util.silence(session.ctx, 8*60*60, skip_su=False)
 
 bot = hoshino.get_bot()
+
+
 @bot.on_message('group')
 async def hb_handler(ev: CQEvent):
     for m in ev.message:
         if m['type'] == 'redbag':
+            print(ev)
             title = m['data']['title']
             break
     else:
