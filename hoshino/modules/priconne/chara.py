@@ -24,9 +24,13 @@ UnavailableChara = {
 
 try:
     gadget_equip = R.img('priconne/gadget/equip.png').open()
+    gadget_new = R.img('priconne/gadget/new.png').open().resize((24, 25))
     gadget_star = R.img('priconne/gadget/star.png').open()
     gadget_star_dis = R.img('priconne/gadget/star_disabled.png').open()
     gadget_star_pink = R.img('priconne/gadget/star_pink.png').open()
+    gadget_rare_n = R.img('priconne/gadget/normal.png').open().convert('RGBA')
+    gadget_rare_s = R.img('priconne/gadget/superiorsuperrare.png').open().convert('RGBA')
+    gadget_rare_m = R.img('priconne/gadget/mask.png').open().convert('RGBA')
     unknown_chara_icon = R.img(f'priconne/unit/icon_unit_{UNKNOWN}31.png').open()
 except Exception as e:
     logger.exception(e)
@@ -100,12 +104,14 @@ def is_npc(id_):
     else:
         return not ((1000 < id_ < 1200) or (1700 < id_ < 1900))
 
-def gen_team_pic(team, size=64, star_slot_verbose=True):
+def gen_team_pic(team, size=64, offsetx=0, sizey=None, star_slot_verbose=True, gacha=False, t=255):
     num = len(team)
-    des = Image.new('RGBA', (num*size, size), (255, 255, 255, 255))
+    if sizey is None:
+        sizey = size
+    des = Image.new('RGBA', (num*size+offsetx, sizey), (255, 255, 255, t))
     for i, chara in enumerate(team):
-        src = chara.render_icon(size, star_slot_verbose)
-        des.paste(src, (i * size, 0), src)
+        src = chara.gachaicon if gacha else chara.render_icon(size, star_slot_verbose)
+        des.paste(src, (i * size, 0), src.split()[3])
     return des
 
 
@@ -128,10 +134,11 @@ def download_chara_icon(id_, star):
 
 class Chara:
 
-    def __init__(self, id_, star=0, equip=0):
+    def __init__(self, id_, star=0, equip=0, new=False):
         self.id = id_
         self.star = star
         self.equip = equip
+        self.new = new
 
     @property
     def name(self):
@@ -163,7 +170,7 @@ class Chara:
         return res
 
 
-    def render_icon(self, size, star_slot_verbose=True) -> Image:
+    def render_icon(self, size, star_slot_verbose=True, gacha=False) -> Image:
         try:
             pic = self.icon.open().convert('RGBA').resize((size, size), Image.LANCZOS)
         except FileNotFoundError:
@@ -172,8 +179,8 @@ class Chara:
 
         l = size // 6
         star_lap = round(l * 0.15)
-        margin_x = ( size - 6*l ) // 2
-        margin_y = round(size * 0.05)
+        margin_x = (( size - 6*l ) // 2)+5*int(gacha)
+        margin_y = round(size * 0.05)+2*int(gacha)
         if self.star:
             for i in range(5 if star_slot_verbose else min(self.star, 5)):
                 a = i*(l-star_lap) + margin_x
@@ -194,6 +201,22 @@ class Chara:
             s = gadget_equip.resize((l, l), Image.LANCZOS)
             pic.paste(s, (a, b, a+l, b+l), s)
         return pic
+
+    @property
+    def gachaicon(self):
+        img = Image.new('RGBA', (84, 84), (255, 255, 255, 0))
+        icon = self.render_icon(128, gacha=True)
+        if self.star > 2:
+            icon.paste(gadget_rare_s, mask=gadget_rare_s.split()[3])
+        else:
+            icon.paste(gadget_rare_n, mask=gadget_rare_n.split()[3])
+        a, b, c = icon.split()[:-1]
+        icon = Image.merge("RGBA", (a, b, c, gadget_rare_m.split()[3]))
+        icon = icon.resize((64, 64), Image.ANTIALIAS)
+        img.paste(icon, (8, 8), mask=icon.split()[3])
+        if self.new:
+            img.paste(gadget_new, mask=gadget_new.split()[3])
+        return img
 
 
 
