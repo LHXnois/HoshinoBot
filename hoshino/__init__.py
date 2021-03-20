@@ -51,5 +51,5 @@ def get_self_ids():
     return _bot._wsr_api_clients.keys()
 
 
-from . import R
+from . import R, C
 from .service import Service, sucmd, SubService
