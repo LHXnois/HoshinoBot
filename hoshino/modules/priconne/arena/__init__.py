@@ -12,7 +12,7 @@ from hoshino.util import FreqLimiter, concat_pic, pic2b64, silence
 from .. import chara
 
 sv_help = '''
-[怎么拆] 接防守队角色名 查询竞技场解法
+[怎么拆] 接防守队角色名 查询竞技场解法，加上地区前缀可以过滤，如台怎么拆
 [点赞] 接作业id 评价作业
 [点踩] 接作业id 评价作业
 '''.strip()
@@ -21,6 +21,9 @@ sv = Service('pcr-arena', help_=sv_help, bundle='pcr查询')
 from . import arena
 
 lmt = FreqLimiter(5)
+
+sorrypic = R.img('kkl/》《.jpg').cqcode
+sorrypicgif = R.img('kkl/》《.gif').cqcode
 
 aliases = ('怎么拆', '怎么解', '怎么打', '如何拆', '如何解', '如何打', 'jjc查询')
 aliases_b = tuple('b' + a for a in aliases) + tuple('B' + a for a in aliases)
@@ -35,19 +38,19 @@ try:
 except Exception as e:
     sv.logger.exception(e)
 
-@sv.on_prefix(aliases)
+@sv.on_prefix(aliases, only_to_me=True)
 async def arena_query(bot, ev):
     await _arena_query(bot, ev, region=1)
 
-@sv.on_prefix(aliases_b)
+@sv.on_prefix(aliases_b, only_to_me=True)
 async def arena_query_b(bot, ev):
     await _arena_query(bot, ev, region=2)
 
-@sv.on_prefix(aliases_tw)
+@sv.on_prefix(aliases_tw, only_to_me=True)
 async def arena_query_tw(bot, ev):
     await _arena_query(bot, ev, region=3)
 
-@sv.on_prefix(aliases_jp)
+@sv.on_prefix(aliases_jp, only_to_me=True)
 async def arena_query_jp(bot, ev):
     await _arena_query(bot, ev, region=4)
 
@@ -84,7 +87,7 @@ async def _arena_query(bot, ev: CQEvent, region: int):
     uid = ev.user_id
 
     if not lmt.check(uid):
-        await bot.finish(ev, '您查询得过于频繁，请稍等片刻', at_sender=True)
+        await bot.finish(ev, f'主人您查询得太快了，在下已经跟不上了><\n{sorrypicgif}', at_sender=True)
     lmt.start_cd(uid)
 
     # 处理输入数据
@@ -96,20 +99,20 @@ async def _arena_query(bot, ev: CQEvent, region: int):
         _, name, score = chara.guess_id(unknown)
         if score < 70 and not defen:
             return  # 忽略无关对话
-        msg = f'无法识别"{unknown}"' if score < 70 else f'无法识别"{unknown}" 您说的有{score}%可能是{name}'
+        msg = f'唔……在下并不记得有叫"{unknown}"的伙伴呢\n有想补充的昵称可以通过[@来杯咖啡]指令登记一下，说清楚是给谁' if score < 70 else f'无法识别"{unknown}" 请问主人指的是{name}吗（{score}%）'
         await bot.finish(ev, msg)
     if not defen:
         await bot.finish(ev, '查询请发送"怎么拆+防守队伍"，无需+号', at_sender=True)
     if len(defen) > 5:
-        await bot.finish(ev, '编队不能多于5名角色', at_sender=True)
+        await bot.finish(ev, '编队不能多于5名角色哦', at_sender=True)
     if len(defen) < 5:
         await bot.finish(ev, '由于数据库限制，少于5名角色的检索条件请移步pcrdfans.com进行查询', at_sender=True)
     if len(defen) != len(set(defen)):
-        await bot.finish(ev, '编队中含重复角色', at_sender=True)
+        await bot.finish(ev, '编队中含重复角色哦', at_sender=True)
     if any(chara.is_npc(i) for i in defen):
-        await bot.finish(ev, '编队中含未实装角色', at_sender=True)
+        await bot.finish(ev, '编队中含未实装角色哦', at_sender=True)
     if 1004 in defen:
-        await bot.send(ev, '\n⚠️您正在查询普通版炸弹人\n※万圣版可用万圣炸弹人/瓜炸等别称', at_sender=True)
+        await bot.send(ev, '\n⚠️主人正在查询普通版炸弹人哦\n※万圣版可用万圣炸弹人/瓜炸等别称', at_sender=True)
 
     # 执行查询
     sv.logger.info('Doing query...')
@@ -119,16 +122,16 @@ async def _arena_query(bot, ev: CQEvent, region: int):
     except hoshino.aiorequests.HTTPError as e:
         code = e.response["code"]
         if code == 117:
-            await bot.finish(ev, "高峰期服务器限流！请前往pcrdfans.com/battle")
+            await bot.finish(ev, f"{sorrypicgif}\n高峰期服务器限勒><！请前往pcrdfans.com/battle")
         else:
-            await bot.finish(ev, f'code{code} 查询出错，请联系维护组调教\n请先前往pcrdfans.com进行查询', at_sender=True)
+            await bot.finish(ev, f'{sorrypicgif}\ncode{code} 查询出错><，请联系维护组调教\n请先前往pcrdfans.com进行查询', at_sender=True)
     sv.logger.info('Got response!')
 
     # 处理查询结果
     if res is None:
-        await bot.finish(ev, '数据库未返回数据，请再次尝试查询或前往pcrdfans.com', at_sender=True)
+        await bot.finish(ev, f'{sorrypicgif}\n数据库未返回数据，请再次尝试查询或前往pcrdfans.com', at_sender=True)
     if not len(res):
-        await bot.finish(ev, '抱歉没有查询到解法\n※没有作业说明随便拆 发挥你的想象力～★\n作业上传请前往pcrdfans.com', at_sender=True)
+        await bot.finish(ev, f'抱歉没有查询到解法><\n{sorrypicgif}\n※没有作业说明随便拆 发挥你的想象力～★\n作业上传请前往pcrdfans.com', at_sender=True)
     res = res[:min(6, len(res))]    # 限制显示数量，截断结果
 
     # 发送回复
@@ -153,14 +156,14 @@ async def _arena_query(bot, ev: CQEvent, region: int):
 
     msg = [
         # defen,
-        f'已为骑士{at}查询到以下进攻方案：',
+        f'已为主人{at}查询到以下进攻方案：',
         str(teams),
         # '作业评价：',
         # *details,
-        # '※发送"点赞/点踩"可进行评价'
+        '※发送"点赞/点踩"可进行评价'
     ]
     if region == 1:
-        msg.append('※使用"b怎么拆"或"台怎么拆"可按服过滤')
+        msg.append('※使用"b怎么拆"或"台怎么拆"可按服过滤哦')
     msg.append('Support by pcrdfans_com')
 
     sv.logger.debug('Arena sending result...')
@@ -171,12 +174,12 @@ async def _arena_query(bot, ev: CQEvent, region: int):
         await silence(ev, 5 * 60)
 
 
-# @sv.on_prefix('点赞')
+@sv.on_prefix('点赞', only_to_me=True)
 async def arena_like(bot, ev):
     await _arena_feedback(bot, ev, 1)
 
 
-# @sv.on_prefix('点踩')
+@sv.on_prefix('点踩', only_to_me=True)
 async def arena_dislike(bot, ev):
     await _arena_feedback(bot, ev, -1)
 
@@ -192,7 +195,7 @@ async def _arena_feedback(bot, ev: CQEvent, action: int):
     try:
         await arena.do_like(qkey, ev.user_id, action)
     except KeyError:
-        await bot.finish(ev, '无法找到作业id！您只能评价您最近查询过的作业', at_sender=True)
+        await bot.finish(ev, '在下找到的作业里好像没有这个id呢，主人只能评价您最近查询过的作业哦', at_sender=True)
     await bot.send(ev, '感谢您的反馈！', at_sender=True)
 
 
