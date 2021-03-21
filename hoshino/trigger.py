@@ -149,6 +149,6 @@ chain = [
     prefix,
     suffix,
     _TextNormalizer(),
-    keyword,
     rex,
+    keyword,
 ]

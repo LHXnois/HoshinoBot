@@ -40,7 +40,11 @@ async def send_calendar(group_id):
     if str(group_id) not in group_data or int(group_id) not in available_group:
         return
     for server in group_data[str(group_id)]['server_list']:
-        im = await generate_day_schedule(server)
+        if 'clanb' in group_data[str(group_id)]:
+            clanb = group_data[str(group_id)]['clanb']
+            im = await generate_day_schedule(server, clanb)
+        else:
+            im = await generate_day_schedule(server)
         base64_str = util.pic2b64(im)
         if 'cardimage' not in group_data[group_id] or not group_data[group_id]['cardimage']:
             msg = f'[CQ:image,file={base64_str}]'
@@ -87,12 +91,15 @@ async def start_scheduled(bot, ev):
         server = 'cn'
     cmd = ev['match'].group(2)
     if not cmd:
-        im = await generate_day_schedule(server)
+        if 'clanb' in group_data[str(group_id)]:
+            clanb = group_data[str(group_id)]['clanb']
+            im = await generate_day_schedule(server, clanb)
+        else:
+            im = await generate_day_schedule(server)
         base64_str = util.pic2b64(im)
         if 'cardimage' not in group_data[group_id] or not group_data[group_id]['cardimage']:
             msg = f'[CQ:image,file={base64_str}]'
         else:
-            # f'[CQ:cardimage,file={base64_str}]'
             msg = util.gencardimage(base64_str, f'{server}服日历', icon)
     else:
         if group_id not in group_data:
@@ -132,6 +139,14 @@ async def start_scheduled(bot, ev):
             else:
                 group_data[group_id]['cardimage'] = False
                 msg = '已切换为标准image模式'
+            save_data()
+        elif '会战' in cmd or 'clanb' in cmd:
+            if 'clanb' not in group_data[group_id] or group_data[group_id]['clanb']:
+                group_data[group_id]['clanb'] = False
+                msg = '已隐藏会战相关内容'
+            else:
+                group_data[group_id]['clanb'] = True
+                msg = '已取消隐藏会战相关内容'
             save_data()
         else:
             msg = '指令错误'

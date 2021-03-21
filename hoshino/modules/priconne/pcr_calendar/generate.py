@@ -13,9 +13,12 @@ server_name = {
 }
 
 
-async def generate_day_schedule(server='cn'):
+async def generate_day_schedule(server='cn', clanb=True):
     events = await get_events(server, 0, 7)
-
+    if not clanb:
+        for event in events:
+            if event['type'] == 3:
+                events.remove(event)
     has_prediction = False
     for event in events:
         if event['start_days'] > 0:
