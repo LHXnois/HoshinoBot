@@ -337,26 +337,31 @@ class Service:
             return nonebot.scheduler.scheduled_job(*args, **kwargs)(wrapper)
         return deco
 
-
-    async def broadcast(self, msgs, TAG='', interval_time=0.5, randomiser=None):
+    async def broadcast(self, msgs, TAG='', interval_time=0.5, randomiser=None, retry=1):
         bot = self.bot
         if isinstance(msgs, (str, MessageSegment, Message)):
             msgs = (msgs, )
         glist = await self.get_enable_groups()
         for gid, selfids in glist.items():
-            try:
-                for msg in msgs:
-                    await asyncio.sleep(interval_time)
-                    msg = randomiser(msg) if randomiser else msg
-                    await bot.send_group_msg(self_id=random.choice(selfids), group_id=gid, message=msg)
-                    await asyncio.sleep(0.1)
-                l = len(msgs)
-                if l:
-                    self.logger.info(f"群{gid} 投递{TAG}成功 共{l}条消息")
-            except Exception as e:
-                self.logger.error(f"群{gid} 投递{TAG}失败：{type(e)}")
-                self.logger.exception(e)
-
+            for msg in msgs:
+                await asyncio.sleep(interval_time)
+                msg = randomiser(msg) if randomiser else msg
+                for _ in range(retry):
+                    try:
+                        await bot.send_group_msg(
+                            self_id=random.choice(selfids),
+                            group_id=gid,
+                            message=msg
+                        )
+                        break
+                    except Exception as e:
+                        self.logger.error(f"群{gid} 投递{TAG}失败：{type(e)}")
+                        self.logger.exception(e)
+                        if retry > 1:
+                            asyncio.sleep(30)
+            ml = len(msgs)
+            if ml:
+                self.logger.info(f"群{gid} 投递{TAG}成功 共{ml}条消息")        
 
     def on_request(self, *events):
         def deco(func):
@@ -367,8 +372,7 @@ class Service:
                 return await func(session)
             return nonebot.on_request(*events)(wrapper)
         return deco
-    
-    
+
     def on_notice(self, *events):
         def deco(func):
             @wraps(func)
@@ -380,8 +384,8 @@ class Service:
         return deco
 
 
-
 sulogger = log.new_logger('sucmd', hoshino.config.DEBUG)
+
 
 def sucmd(name, force_private=True, **kwargs) -> Callable:
     kwargs['privileged'] = True

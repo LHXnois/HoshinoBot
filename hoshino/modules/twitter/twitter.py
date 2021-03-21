@@ -39,7 +39,7 @@ subr_dic['illust'] = {
             visible=False): ['shiratamacaron', 'k_yuizaki', 'suzukitoto0323',
                              'tsukimi08', 'blade4649', 'itiri', 'MauveSR',
                              'hoshi_u3', 'gurasion0310', 'amsrntk3',
-                             'nejikirio', 'siragagaga'],
+                             'nejikirio', 'siragagaga', 'kedamaa'],
 }
 
 latest_info = {}
@@ -179,7 +179,7 @@ async def twitter_poller(bundle: str):
         for account in subr_list:
             twts.extend(buf.get(account, []))
         if twts:
-            await ssv.broadcast(twts, ssv.name, 0.5)
+            await ssv.broadcast(twts, ssv.name, 0.5, retry=5)
 
 
 @sv.on_prefix('看推', only_to_me=True)     # for test
