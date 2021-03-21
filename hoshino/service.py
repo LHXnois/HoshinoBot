@@ -133,6 +133,12 @@ class Service:
     def bot(self):
         return hoshino.get_bot()
 
+    @property
+    def bundle(self):
+        for i in _service_bundle:
+            if self in _service_bundle[i]:
+                return i
+
     @staticmethod
     def get_loaded_services() -> Dict[str, "Service"]:
         return _loaded_services
@@ -343,6 +349,7 @@ class Service:
                     await asyncio.sleep(interval_time)
                     msg = randomiser(msg) if randomiser else msg
                     await bot.send_group_msg(self_id=random.choice(selfids), group_id=gid, message=msg)
+                    await asyncio.sleep(0.1)
                 l = len(msgs)
                 if l:
                     self.logger.info(f"群{gid} 投递{TAG}成功 共{l}条消息")
@@ -396,3 +403,43 @@ def sucmd(name, force_private=True, **kwargs) -> Callable:
                 sulogger.exception(e)
         return nonebot.on_command(name, **kwargs)(wrapper)
     return deco
+
+
+class SubService(Service):
+    def __init__(self, name, main_service: Service, use_priv=None, manage_priv=None, enable_on_default=None, visible=None,
+                 help_=None):
+        assert main_service.name in _loaded_services, f'Service name "{main_service.name}" not exist!'
+        if not use_priv:
+            use_priv = main_service.use_priv
+        if not manage_priv:
+            manage_priv = main_service.manage_priv
+        Service.__init__(self, name,
+                         use_priv=use_priv,
+                         manage_priv=manage_priv,
+                         enable_on_default=enable_on_default,
+                         visible=enable_on_default,
+                         help_=help_,
+                         bundle=main_service.bundle)
+        self.main_service = main_service
+
+    def check_enabled(self, group_id):
+        if self.main_service.check_enabled(group_id):
+            return bool( (group_id in self.enable_group) or (self.enable_on_default and group_id not in self.disable_group))
+        return False
+
+    async def get_enable_groups(self) -> dict:
+        """获取所有启用本服务的群
+        
+        @return { group_id: [self_id1, self_id2] }
+        """
+        gl = defaultdict(list)
+        for sid in hoshino.get_self_ids():
+            sgl = set(g['group_id']
+                      for g in await self.bot.get_group_list(self_id=sid))
+            if self.enable_on_default:
+                sgl = (sgl - self.disable_group) - self.main_service.disable_group
+            else:
+                sgl = (sgl & self.enable_group) & self.main_service.enable_group
+            for g in sgl:
+                gl[g].append(sid)
+        return gl

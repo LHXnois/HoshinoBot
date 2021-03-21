@@ -1,3 +1,4 @@
+from .textfilter.filter import DFAFilter
 import base64
 import os
 import time
@@ -6,6 +7,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from io import BytesIO
 
+import re
 import pytz
 import zhconv
 from aiocqhttp.exceptions import ActionFailed
@@ -14,14 +16,16 @@ from matplotlib import pyplot as plt
 from PIL import Image
 
 import hoshino
-from hoshino.typing import CQEvent, Message, Union
+from hoshino.typing import CQEvent, Message, Union, MessageSegment
+from .yinglish import chs2yin
+
 
 try:
     import ujson as json
 except:
     import json
 
-
+from nonebot import scheduler
 
 
 def load_config(inbuilt_file_var):
@@ -36,6 +40,28 @@ def load_config(inbuilt_file_var):
             return config
     except Exception as e:
         hoshino.logger.exception(e)
+        return {}
+
+
+def save_jsons(config: dict, path: str) -> bool:
+    try:
+        with open(path, 'w', encoding='utf8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as ex:
+        hoshino.logger.error(ex)
+        return False
+
+
+def load_jsons(path: str) -> dict:
+    try:
+        with open(path, mode='r', encoding='utf8') as f:
+            data = json.load(f)
+            return data
+    except Exception as ex:
+        hoshino.logger.error(
+            f'exception occured when loading config in {path}  {ex}')
+        hoshino.logger.exception(ex)
         return {}
 
 
@@ -59,28 +85,42 @@ async def silence(ev: CQEvent, ban_time, skip_su=True):
         hoshino.logger.exception(e)
 
 
-def pic2b64(pic:Image) -> str:
+def pic2b64(pic: Image) -> str:
     buf = BytesIO()
     pic.save(buf, format='PNG')
     base64_str = base64.b64encode(buf.getvalue()).decode()
     return 'base64://' + base64_str
 
 
-def fig2b64(plt:plt) -> str:
+def fig2b64(plt: plt) -> str:
     buf = BytesIO()
     plt.savefig(buf, format='PNG', dpi=100)
     base64_str = base64.b64encode(buf.getvalue()).decode()
     return 'base64://' + base64_str
 
 
-def concat_pic(pics, border=5):
+def concat_pic(pics, border=5, t=255):
     num = len(pics)
-    w, h = pics[0].size
-    des = Image.new('RGBA', (w, num * h + (num-1) * border), (255, 255, 255, 255))
+    w = 0
+    h = [0]*len(pics)
+    for i, p in enumerate(pics):
+        _w, h[i] = p.size
+        w = max(w, _w)
+    des = Image.new('RGBA', (w, sum(h) + (num-1) * border),
+                    (255, 255, 255, t))
     for i, pic in enumerate(pics):
-        des.paste(pic, (0, i * (h + border)), pic)
+        des.paste(pic, (0,  (sum(h[:i]) + i * border)), pic)
     return des
 
+
+def tlen(text: str, font_size: int):
+    length = 0
+    for i in text:
+        if re.search(r'[0-9a-zA-Z]', i):
+            length += font_size // 2
+        else:
+            length += font_size
+    return length
 
 def normalize_str(string) -> str:
     """
@@ -94,8 +134,11 @@ def normalize_str(string) -> str:
 
 MONTH_NAME = ('睦月', '如月', '弥生', '卯月', '皐月', '水無月',
               '文月', '葉月', '長月', '神無月', '霜月', '師走')
-def month_name(x:int) -> str:
+
+
+def month_name(x: int) -> str:
     return MONTH_NAME[x - 1]
+
 
 DATE_NAME = (
     '初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
@@ -103,8 +146,11 @@ DATE_NAME = (
     '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十',
     '卅一'
 )
-def date_name(x:int) -> str:
+
+
+def date_name(x: int) -> str:
     return DATE_NAME[x - 1]
+
 
 NUM_NAME = (
     '〇〇', '〇一', '〇二', '〇三', '〇四', '〇五', '〇六', '〇七', '〇八', '〇九',
@@ -118,7 +164,9 @@ NUM_NAME = (
     '八〇', '八一', '八二', '八三', '八四', '八五', '八六', '八七', '八八', '八九',
     '九〇', '九一', '九二', '九三', '九四', '九五', '九六', '九七', '九八', '九九',
 )
-def time_name(hh:int, mm:int) -> str:
+
+
+def time_name(hh: int, mm: int) -> str:
     return NUM_NAME[hh] + NUM_NAME[mm]
 
 
@@ -131,7 +179,8 @@ class FreqLimiter:
         return bool(time.time() >= self.next_time[key])
 
     def start_cd(self, key, cd_time=0):
-        self.next_time[key] = time.time() + (cd_time if cd_time > 0 else self.default_cd)
+        self.next_time[key] = time.time() + (cd_time if cd_time >
+                                             0 else self.default_cd)
 
     def left_time(self, key) -> float:
         return self.next_time[key] - time.time()
@@ -139,7 +188,7 @@ class FreqLimiter:
 
 class DailyNumberLimiter:
     tz = pytz.timezone('Asia/Shanghai')
-    
+
     def __init__(self, max_num):
         self.today = -1
         self.count = defaultdict(int)
@@ -163,10 +212,9 @@ class DailyNumberLimiter:
         self.count[key] = 0
 
 
-from .textfilter.filter import DFAFilter
-
 gfw = DFAFilter()
-gfw.parse(os.path.join(os.path.dirname(__file__), 'textfilter/sensitive_words.txt'))
+gfw.parse(os.path.join(os.path.dirname(__file__),
+                       'textfilter/sensitive_words.txt'))
 
 
 def filt_message(message: Union[Message, str]):
@@ -179,3 +227,54 @@ def filt_message(message: Union[Message, str]):
         return message
     else:
         raise TypeError
+
+
+def add_delay_job(task, id=None, delay_time: int = 30, args=[]):
+    now = datetime.now()
+    job = scheduler.add_job(task,
+                            'date',
+                            id=id,
+                            run_date=now +
+                            timedelta(seconds=delay_time),
+                            misfire_grace_time=5,
+                            args=args)
+    return job
+
+
+def add_date_job(task, id=None, run_date=None, args=[]):
+    job = scheduler.add_job(task, 'date', id=id, run_date=run_date, args=args)
+    return job
+
+
+def add_cron_job(task, id=None, hour='*', minute='0', second='0', args=[]):
+    job = scheduler.add_job(task,
+                            'cron',
+                            id=id,
+                            hour=hour,
+                            minute=minute,
+                            second=second,
+                            misfire_grace_time=5,
+                            args=args)
+    return job
+
+
+def poke(uid):
+    return MessageSegment(type_='poke', data={'qq': str(uid), })
+
+
+async def poke_in_session(session, uid=None):
+    if uid is None:
+        uid = session['user_id']
+    await session.send(poke(uid))
+
+
+async def poke_in_event(bot, ev, uid=None):
+    if uid is None:
+        uid = ev.user_id
+    await bot.send(ev, poke(uid))
+
+
+def gencardimage(file, source=None, icon=None):
+    source = f',source={source}' if source else ''
+    icon = f',icon={icon}' if icon else ''
+    return f'[CQ:cardimage,file={file}{source}{icon}]'

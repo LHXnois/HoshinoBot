@@ -1,6 +1,9 @@
 import os
+import random
 import sqlite3
-
+from hoshino.util import DailyNumberLimiter
+from ..pcrColleciton import pcrCoins
+_dbonlim = DailyNumberLimiter(3)
 
 class Dao:
     def __init__(self, db_path):
@@ -79,6 +82,16 @@ class Game:
 
     def record(self):
         return self.gm.db.record_winning(self.gid, self.winner)
+
+    def bonus(self):
+        uid = self.winner
+        if _dbonlim.check(uid):
+            _dbonlim.increase(uid)
+            bn = _dbonlim.get_num(uid)
+            bonus = [1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 5, 10]
+            jewelbonus = random.choice(bonus)*150
+            pcrCoins(uid, '宝石').add_C(jewelbonus)
+            return (jewelbonus, bn)
 
 
 from . import desc_guess

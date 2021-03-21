@@ -1,15 +1,21 @@
 import random
 from hoshino import Service, R
 from hoshino.typing import CQEvent
-from hoshino.util import DailyNumberLimiter
+from hoshino.util import DailyNumberLimiter, escape
+from .pcrColleciton import pcrCoins
 
 sv = Service('pcr-login-bonus', bundle='pcr娱乐', help_='[星乃签到] 给主さま盖章章')
 
 lmt = DailyNumberLimiter(1)
 login_presents = [
-    '扫荡券×5',  '卢币×1000', '普通EXP药水×5',  '宝石×50',  '玛那×3000',
-    '扫荡券×10', '卢币×1500', '普通EXP药水×15', '宝石×80',  '白金转蛋券×1',
-    '扫荡券×15', '卢币×2000', '上级精炼石×3',   '宝石×100', '白金转蛋券×1',
+    '扫荡券×5',  '特级EXP药水×10', '普通EXP药水×5',  '上级精炼石×8',
+    '扫荡券×10', '特级EXP药水×15', '普通EXP药水×15', '上级精炼石×15',
+    '扫荡券×15', '特级EXP药水×20', '上级精炼石×3',   '白金转蛋券×1',
+]
+login_jewel = [
+    50, 100, 150, 300, 500, 1000, 1500, 3000, 5000, 8000, 10000, 20000,
+    50, 50, 50, 50, 50, 50, 50, 50, 100, 100, 100, 100, 100, 150, 150,
+    300, 300, 500, 500, 1000, 1500, 3000,
 ]
 todo_list = [
     '找伊绪老师上课',
@@ -43,7 +49,8 @@ todo_list = [
     '搓一把日麻'
 ]
 
-@sv.on_fullmatch(('签到', '盖章', '妈', '妈?', '妈妈', '妈!', '妈！', '妈妈！'), only_to_me=True)
+
+@sv.on_fullmatch(('签到', '盖章', '妈', '妈?', '妈妈', '妈!', '妈！', '妈妈！', '盖章章'), only_to_me=True)
 async def give_okodokai(bot, ev: CQEvent):
     uid = ev.user_id
     if not lmt.check(uid):
@@ -51,5 +58,16 @@ async def give_okodokai(bot, ev: CQEvent):
         return
     lmt.increase(uid)
     present = random.choice(login_presents)
+    jewel = random.choice(login_jewel)
+    pcrCoins(ev.user_id, '宝石').add_C(jewel)
     todo = random.choice(todo_list)
-    await bot.send(ev, f'\nおかえりなさいませ、主さま{R.img("priconne/kokkoro_stamp.png").cqcode}\n{present}を獲得しました\n私からのプレゼントです\n主人今天要{todo}吗？', at_sender=True)
+    await bot.send(ev, f'\nおかえりなさいませ、主さま{R.img("priconne/kokkoro_stamp.png").cqcode}\n{present}を獲得しました\n随机获得宝石×{jewel}\n私からのプレゼントです\n主人今天要{todo}吗？', at_sender=True)
+
+@sv.on_fullmatch('我的宝石')
+async def my_jewel(bot, ev: CQEvent):
+    jewel = pcrCoins(ev.user_id, '宝石').cnum
+    user = ev.sender['card']
+    if not user:
+        user = ev.sender['nickname']
+    msg = f'\n {user} ======= 宝石：{jewel} ======='.split()
+    await bot.send(ev, escape('\n'.join(msg)), at_sender=True)
