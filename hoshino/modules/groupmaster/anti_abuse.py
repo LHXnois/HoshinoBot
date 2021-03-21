@@ -9,8 +9,8 @@ from nonebot.message import _check_calling_me_nickname
 
 import hoshino
 from hoshino import R, util, trigger
-from hoshino.typing import CQEvent
-import copy
+from hoshino.typing import CQEvent, Union
+from aiocqhttp import Message
 '''
 from nonebot.command import CommandManager
 def parse_command(bot, cmd_str):
@@ -71,17 +71,26 @@ def parse_command(bot, cmd_str, NOTLOG=False):
 using_cmd_msg = {}
 
 
-def check_command(ev: CQEvent, msg=None) -> str:
-    event = copy.deepcopy(ev)
-    if msg:
-        while len(event.message) > 1:
-            event.message.pop()
-        event.message[0].type = "text"
-        event.message[0].data["text"] = msg
+def check_command(msg) -> str:
+    if type(msg) is str:
+        message = Message(msg)
+        rmessage = msg
+    elif type(msg) is CQEvent:
+        message = msg.message
+        rmessage = msg.raw_message
+        msg = msg.raw_message
     else:
-        msg = event.raw_message
+        return None
     if msg in using_cmd_msg:
         return using_cmd_msg[msg]
+    ev = {
+        "message":  message,
+        "message_type": "group",
+        "post_type": "message",
+        "raw_message": rmessage,
+        "sub_type": "normal",
+        }
+    event = CQEvent().from_payload(ev)
     event['to_me'] = False
     _check_calling_me_nickname(hoshino.get_bot(), event)
     for t in trigger.chain:
@@ -118,7 +127,8 @@ async def ban_word(session):
             return
     elif ctx['message_type'] == 'discuss':
         msg_from += f'@[讨论组:{ctx["discuss_id"]}]'
-    hoshino.logger.critical(f'Self: {ctx["self_id"]}, Message {ctx["message_id"]} from {msg_from}: {ctx["message"]}')
+    hoshino.logger.critical(
+        f'Self: {ctx["self_id"]}, Message {ctx["message_id"]} from {msg_from}: {ctx["message"]}')
     hoshino.priv.set_block_user(user_id, timedelta(hours=8))
     pic = R.img(f"kkl/badword{random.randint(1, 4)}.jpg").cqcode
     await session.send(f"不理你啦！バーカー\n{pic}", at_sender=True)
@@ -137,7 +147,7 @@ async def hb_handler(ev: CQEvent):
     else:
         return
     if title:
-        if check_command(ev, title):
+        if check_command(title):
             group_id = ev.group_id
             user_id = ev.user_id
             self_id = ev.self_id

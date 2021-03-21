@@ -94,7 +94,7 @@ async def storQA(bot, ev: CQEvent, gid: int, uid: int) -> str:
         await bot.finish(ev, '问题不能为空哦')
     if msg[1] == '':
         await bot.finish(ev, '回答不能为空哦')
-    if check_command(ev, msg[0]):
+    if check_command(msg[0]):
         await bot.finish(ev, '与指令冲突哦')
     Qu = await stor_pic(msg[0], False)
     An = await stor_pic(msg[1])
@@ -113,7 +113,6 @@ async def storQA(bot, ev: CQEvent, gid: int, uid: int) -> str:
                 gid=gid,
                 uid=uid,
                 answer=An,
-                # create_time=time.time(),
             ).execute()
         await bot.send(ev, '好的我记住了')
         return Qu

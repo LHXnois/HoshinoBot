@@ -45,7 +45,10 @@ async def yxh(bot, ev: CQEvent):
     arr = kw.split('/')
     if not arr[2]:
         return
-    msg = f'    {arr[0]}{arr[1]}是怎么回事呢？{arr[0]}相信大家都很熟悉，但是{arr[0]}{arr[1]}是怎么回事呢，下面就让可可萝带大家一起了解吧。\n    {arr[0]}{arr[1]}，其实就是{arr[2]}，大家可能会很惊讶{arr[0]}怎么会{arr[1]}呢？但事实就是这样，可可萝也感到非常惊讶。\n    这就是关于{arr[0]}{arr[1]}的事情了，大家有什么想法呢，欢迎在群里告诉可可萝一起讨论哦！'
+    msg = f'    {arr[0]}{arr[1]}是怎么回事呢？{arr[0]}相信大家都很熟悉，但是'\
+        f'{arr[0]}{arr[1]}是怎么回事呢，下面就让可可萝带大家一起了解吧。\n    {arr[0]}{arr[1]}，其实'\
+        f'就是{arr[2]}，大家可能会很惊讶{arr[0]}怎么会{arr[1]}呢？但事实就是这样，可可萝也感到非常惊讶。\n'\
+        f'    这就是关于{arr[0]}{arr[1]}的事情了，大家有什么想法呢，欢迎在群里告诉可可萝一起讨论哦！'
     await bot.send(ev, msg)
 
 
@@ -97,7 +100,8 @@ async def jc(bot, ev: CQEvent):
     await bot.send(ev, str(MessageSegment.image(pic2b64(image_back))))
 
 
-@sv.on_rex(('^我(有个|一个|有一个)*朋友(想问问|说|让我问问|想问|让我问|想知道|让我帮他问问|让我帮他问|让我帮忙问|让我帮忙问问|问)*(?P<kw>.{0,30}$)'), only_to_me=True)
+@sv.on_rex(('^我(有个|一个|有一个)*朋友(想问问|说|让我问问|想问|让我问|想知道|'
+            '让我帮他问问|让我帮他问|让我帮忙问|让我帮忙问问|问)*(?P<kw>.{0,30}$)'), only_to_me=True)
 async def friend(bot, ev: CQEvent):
     if ev.user_id not in bot.config.SUPERUSERS:
         # 定义非管理员的冷却时间
