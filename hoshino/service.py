@@ -1,10 +1,11 @@
 import asyncio
+from hoshino import util
 import os
 import random
 import re
 from collections import defaultdict
 from functools import wraps
-
+import time
 import nonebot
 import pytz
 from nonebot.command import SwitchException, _FinishException, _PauseException
@@ -346,22 +347,30 @@ class Service:
             for msg in msgs:
                 await asyncio.sleep(interval_time)
                 msg = randomiser(msg) if randomiser else msg
-                for _ in range(retry):
-                    try:
-                        await bot.send_group_msg(
-                            self_id=random.choice(selfids),
-                            group_id=gid,
-                            message=msg
-                        )
-                        break
-                    except Exception as e:
-                        self.logger.error(f"群{gid} 投递{TAG}失败：{type(e)}")
-                        self.logger.exception(e)
-                        if retry > 1:
-                            asyncio.sleep(30)
+                await self.retrybc(selfids, gid, TAG, msg, retry)
             ml = len(msgs)
             if ml:
-                self.logger.info(f"群{gid} 投递{TAG}成功 共{ml}条消息")        
+                self.logger.info(f"群{gid} 投递{TAG}任务启动成功 共{ml}条消息")
+
+    async def retrybc(self, selfids, gid, TAG, msg, retry):
+        try:
+            self.logger.info(
+                f"群{gid} 尝试投递{TAG}消息：{msg if len(msg)<20 else msg[:15]}\n剩余尝试次数{retry}次")
+            await self.bot.send_group_msg(
+                self_id=random.choice(selfids),
+                group_id=gid,
+                message=msg
+            )
+        except Exception as e:
+            self.logger.error(f"群{gid} 投递{TAG}失败：{type(e)}剩余尝试次数{retry+1}次")
+            self.logger.exception(e)
+            retry -= 1
+            if retry >= 0:
+                util.add_delay_job(
+                    self.retrybc,
+                    f'bc_{gid}_{retry}_{time.time()}',
+                    60,
+                    [selfids, gid, TAG, msg, retry])
 
     def on_request(self, *events):
         def deco(func):
