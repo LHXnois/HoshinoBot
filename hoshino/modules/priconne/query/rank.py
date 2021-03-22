@@ -6,7 +6,8 @@ from hoshino.service import sucmd
 from hoshino.typing import CommandSession
 
 sv_help = '''
-[日/台/陆rank] rank推荐表
+xxx要卡rank吗？
+[#日/台/陆rank] rank推荐表
 '''.strip()
 
 sv = SubService("pcr-rank", msv, help_=sv_help)

@@ -7,7 +7,13 @@ try:
 except:
     import json
 
-sv = Service('aircon', visible=True)
+sv = Service('aircon', visible=True, help_='''群内空调开放！
+[#开/关空调] 开/关空调，首次使用开空调时会自动安装空调
+[#设置温度] 后跟数字
+[#当前温度] 查看温度
+[#设置风速低/中/高] 调整风速
+[#设置环境温度] 字面意思
+[#升/降级空调] 切换家用空调/中央空调''', bundle='fun')
 
 ac_type_text = ["家用空调", "中央空调"]
 AIRCON_HOME = 0
@@ -68,9 +74,8 @@ async def aircon_on(bot, event):
 
     update_aircon(aircon)
     aircon['is_on'] = True
-    msg = print_aircon(aircon)
     write_group_aircon(__file__, aircons)
-    await bot.send(event, "❄哔~空调已开\n" + msg)
+    await bot.send(event, "❄哔~空调已开")
 
 
 @sv.on_fullmatch('关空调', only_to_me=True)
@@ -84,9 +89,8 @@ async def aircon_off(bot, event):
 
     update_aircon(aircon)
     aircon['is_on'] = False
-    msg = print_aircon(aircon)
     write_group_aircon(__file__, aircons)
-    await bot.send(event, '💤哔~空调已关\n' + msg)
+    await bot.send(event, '💤哔~空调已关')
 
 
 @sv.on_fullmatch('当前温度', only_to_me=True)
@@ -106,7 +110,7 @@ async def aircon_now(bot, event):
     if not aircon["is_on"]:
         msg = "💤空调未开启\n" + msg
     else:
-        msg = "❄" + msg
+        msg = aircon['stats'] + msg
 
     await bot.send(event, msg)
 
@@ -133,7 +137,7 @@ async def set_temp(bot, event):
     aircon["set_temp"] = set_temp
     msg = print_aircon(aircon)
     write_group_aircon(__file__, aircons)
-    await bot.send(event, "❄" + msg)
+    await bot.send(event, aircon['stats'] + msg)
 
 
 @sv.on_prefix(('设置风速', '设定风速', '设置风量', '设定风量'), only_to_me=True)
@@ -161,7 +165,7 @@ async def set_wind_rate(bot, event):
     aircon["wind_rate"] = wind_rate - 1
     msg = print_aircon(aircon)
     write_group_aircon(__file__, aircons)
-    await bot.send(event, "❄" + msg)
+    await bot.send(event, aircon['stats'] + msg)
 
 
 @sv.on_prefix(('设置环境温度', '设定环境温度'), only_to_me=True)
@@ -191,7 +195,7 @@ async def set_env_temp(bot, event):
     if not aircon["is_on"]:
         msg = "💤空调未开启\n" + msg
     else:
-        msg = "❄" + msg
+        msg = aircon['stats'] + msg
 
     await bot.send(event, msg)
 
@@ -232,7 +236,7 @@ async def upgrade_aircon(bot, event):
     aircon["ac_type"] = ac_type
     msg = print_aircon(aircon)
     write_group_aircon(__file__, aircons)
-    msg = f"❄已升级至{ac_type_text[ac_type]}~\n" + msg
+    msg = f"{aircon['stats']}已升级至{ac_type_text[ac_type]}~\n" + msg
     await bot.send(event, msg)
 
 
@@ -256,5 +260,5 @@ async def downgrade_aircon(bot, event):
     aircon["ac_type"] = ac_type
     msg = print_aircon(aircon)
     write_group_aircon(__file__, aircons)
-    msg = f"❄已降级至{ac_type_text[ac_type]}~\n" + msg
+    msg = f"{aircon['stats']}已降级至{ac_type_text[ac_type]}~\n" + msg
     await bot.send(event, msg)

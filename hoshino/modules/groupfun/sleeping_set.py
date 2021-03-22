@@ -10,7 +10,7 @@ from hoshino.typing import CQEvent
 sv = Service('sleeping-set', help_='''
 [精致睡眠] 8小时精致睡眠(bot需具有群管理权限)
 [给我来一份精致昏睡下午茶套餐] 叫一杯先辈特调红茶(bot需具有群管理权限)
-'''.strip())
+'''.strip(), bundle='fun')
 
 @sv.on_fullmatch(('睡眠套餐', '休眠套餐', '精致睡眠', '来一份精致睡眠套餐'))
 async def sleep_8h(bot, ev):

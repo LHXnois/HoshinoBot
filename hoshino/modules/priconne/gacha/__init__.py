@@ -3,8 +3,6 @@ import random
 from collections import defaultdict
 from PIL import Image
 
-from PIL.Image import new
-
 from hoshino import Service, priv, util, R
 from hoshino.typing import CQEvent, MessageSegment
 from hoshino.util import DailyNumberLimiter, concat_pic, pic2b64, silence
@@ -14,16 +12,19 @@ from .gacha import Gacha, cardinfo
 from ..pcrColleciton import pcrCoins, pcrCharas
 try:
     import ujson as json
-except:
+except Exception:
     import json
 
 
 sv_help = '''
-[星乃来发十连] 转蛋模拟
-[星乃来发单抽] 转蛋模拟
-[星乃来一井] 4w5钻！
-[查看卡池] 模拟卡池&出率
-[切换卡池] 更换模拟卡池
+在群里玩pcr（的抽卡）！
+宝石来源：签到，小游戏
+[#单抽/十连/来一井] 抽卡！
+ps: 每天第一发十连免费
+[#抽干家底] 更真实的抽一井（指抽到就停手
+[#pcr仓库] 看看box
+[#查看卡池] 卡池&出率
+[#切换卡池] 更换卡池（jp以外卡池不会及时更新（懒
 '''.strip()
 sv = Service('gacha', help_=sv_help, bundle='pcr娱乐')
 free_limit = DailyNumberLimiter(1)

@@ -6,16 +6,35 @@ from hoshino import R, Service, util, SubService, aiorequests
 from hoshino.Groupmaster import Groupmaster
 from hoshino.typing import CQEvent
 
-sv = Service('wackiness', help_='''整活小功能们''', visible=False, bundle='整活')
+sv = Service('wackiness', help_='''整活小功能们''', visible=False, bundle='fun')
+Answer = SubService('answerbook', sv, help_='''为什么不问问神奇海螺呢！
+[#答案之书] 后跟你的烦恼，问题解决率高达81.0%!(口胡''')
 Choseone = SubService('choseone', sv, help_='''拯救选择恐惧症！
-[@选择A还是B]帮你做出选择''')
+[#选择A还是B] 帮你做出选择''')
+Cl = SubService('checkcolock', sv, help_='''看看你的表走得准不准！
+[#对表] 获取对表网站链接''')
 Howtobaidu = SubService('howtobaidu', sv, help_='''拯救懒人群友！
-[@百度xxx]让可可萝教你百度xxx''')
+[#百度xxx] 让可可萝教你百度xxx''')
+Mz = SubService('mozheng', sv, help_='''魔怔文生成器！
+[#我好想做A的B啊/C/D] 原文为《嘉然小姐的狗》
+    A替换嘉然小姐
+    B替换狗
+    C替换老鼠
+    D替换猫
+    CD可以没有
+    eg:#我好想做萝莉的狗啊''')
+Lw = SubService('longwang', sv, help_='''迫害龙王！
+[#迫害龙王] 字面意思''')
 Nbnhhsh = SubService('nbnhhsh', sv, help_='''能不能好好说话！
-[@??]翻译缩写
+[#??] 后跟翻译缩写
 eg:#??pcr''')
+Tail = SubService('gentail', sv, help_='''群名片小尾巴！
+[#我要小尾巴] 后跟想要的小尾巴''')
 Wyy = SubService('wyysentence', sv, help_='''到点了，上号！
 [上号/到点了] 每天0-1点限定功能''')
+Yinglish = SubService('yinglish', sv, help_='''淫语翻译机
+[#提涩] 后跟想要提升涩度的文字
+[#提提涩] 转化率max，效果好不好不好说''')
 tz = pytz.timezone('Asia/Shanghai')
 
 
@@ -79,7 +98,6 @@ async def music163_sentences(bot, ev: CQEvent):
     resp = await aiorequests.get('https://api.lo-li.icu/wyy/', timeout=5)
     if resp.ok:
         sentences = await resp.text
-        # await bot.finish(ev, sentences)
     else:
         await bot.finish(ev, '上号失败，我很抱歉。查询出错，请稍后重试。')
     if random.random() < 0.5:
@@ -89,13 +107,13 @@ async def music163_sentences(bot, ev: CQEvent):
     await bot.send(ev, sentences)
 
 
-@sv.on_prefix(('人生解答', '答案之书'), only_to_me=True)
+@Answer.on_prefix(('人生解答', '答案之书'), only_to_me=True)
 async def chat_answer(bot, ev: CQEvent):
     try:
         answers = R.data('groupfun/wackygroup/answer.json', 'json')
         answers = answers.read["Theanswer"]
         await bot.send(ev, random.choice(answers), at_sender=True)
-    except:
+    except Exception:
         sv.logger.error('chat_answer读json出错')
         await bot.send(ev, '答案之书找不到惹T T', at_sender=True)
 
@@ -115,7 +133,7 @@ async def chat_jinnianshengyu(bot, ev: CQEvent):
     await bot.send(ev, msg)
 
 
-@sv.on_prefix('我要小尾巴', only_to_me=True)
+@Tail.on_prefix('我要小尾巴', only_to_me=True)
 async def weiba(bot, ev: CQEvent):
     fcode = u'\u202e'
     ecode = u'\u202d'
@@ -134,7 +152,7 @@ async def weiba(bot, ev: CQEvent):
         await bot.send(ev, newcard)
 
 
-@sv.on_fullmatch(('迫害龙王', '谁是龙王'), only_to_me=True)
+@Lw.on_fullmatch(('迫害龙王', '谁是龙王'), only_to_me=True)
 async def longwang(bot, ev: CQEvent):
     longwang = await Groupmaster(ev).honor_info(
         honor_type='talkative', key='current_talkative')
@@ -150,13 +168,13 @@ async def longwang(bot, ev: CQEvent):
     await bot.send(ev, msg)
 
 
-@sv.on_fullmatch(('对表'), only_to_me=True)
+@Cl.on_fullmatch(('对表'), only_to_me=True)
 async def checkclock(bot, ev: CQEvent):
     msg = '[CQ:share,url=https://time.is/zh/,title=时间校准]'
     await bot.send(ev, msg)
 
 
-@sv.on_prefix(('提色', '提涩', '提瑟'), only_to_me=True)
+@Yinglish.on_prefix(('提色', '提涩', '提瑟'), only_to_me=True)
 async def seqiup(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     kw = util.filt_message(kw)
@@ -164,7 +182,7 @@ async def seqiup(bot, ev: CQEvent):
     await bot.send(ev, kw)
 
 
-@sv.on_prefix(('提提色', '提提涩', '提提瑟'), only_to_me=True)
+@Yinglish.on_prefix(('提提色', '提提涩', '提提瑟'), only_to_me=True)
 async def seqiupup(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     kw = util.filt_message(kw)
@@ -172,7 +190,7 @@ async def seqiupup(bot, ev: CQEvent):
     await bot.send(ev, kw)
 
 
-@sv.on_rex(r'^我?好想做([^/]+)的([^/]+)啊', only_to_me=True)
+@Mz.on_rex(r'^我?好想做([^/]+)的([^/]+)啊', only_to_me=True)
 async def jiarannogog(bot, ev: CQEvent):
     cont = R.data('groupfun/wackygroup/jiarannodog.json', 'json').read
     cont = '\n'.join(cont)

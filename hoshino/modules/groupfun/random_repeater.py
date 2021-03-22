@@ -5,7 +5,7 @@ from hoshino.typing import CQEvent, CQHttpError
 from ..groupmaster.anti_abuse import check_command
 from PIL import ImageSequence
 from pygtrie import CharTrie
-sv = Service('random-repeater', help_='随机复读机pro')
+sv = Service('random-repeater', help_='随机复读机pro', bundle='fun')
 
 PROB_A = 1.4
 group_stat = {}     # group_id: (last_msg, is_repeated, p)

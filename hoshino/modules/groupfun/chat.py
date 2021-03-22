@@ -12,7 +12,7 @@ async def say_hello(session):
     await session.send('はい！私はいつも貴方の側にいますよ！')
 
 
-sv = Service('chat', visible=False, bundle='groupfun')
+sv = Service('chat', visible=False, bundle='fun')
 
 tz = pytz.timezone('Asia/Shanghai')
 

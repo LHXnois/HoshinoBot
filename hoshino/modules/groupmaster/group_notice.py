@@ -4,7 +4,7 @@ from hoshino import Service, R
 from hoshino.typing import NoticeSession
 from hoshino.Groupmaster import Groupmaster as Gm
 
-sv1 = Service('group-leave-notice', help_='退群通知')
+sv1 = Service('group-leave-notice', help_='退群通知', bundle='master')
 
 howleave = ['退群了', '被rm -rf了', '失去了梦想', '离开了我们',
             '各自精彩去了', '褪裙了', '回了老家', '回老家娶老婆了',
@@ -23,7 +23,7 @@ async def leave_notice(session: NoticeSession):
         f"{str(avatar)}\n{name}({uid}){random.choice(howleave)}。")
 
 
-sv2 = Service('group-welcome', help_='入群欢迎')
+sv2 = Service('group-welcome', help_='入群欢迎', bundle='master')
 
 @sv2.on_notice('group_increase')
 async def increace_welcome(session: NoticeSession):

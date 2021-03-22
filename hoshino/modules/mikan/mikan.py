@@ -8,7 +8,7 @@ from hoshino import Service, aiorequests
 
 sv = Service('bangumi', enable_on_default=False, help_='''
 蜜柑番剧更新推送
-[@来点新番]看看订阅更新
+[#来点新番]看看订阅更新
 有想订阅的番的话可以@蓝红心'''.strip())
 
 class Mikan:

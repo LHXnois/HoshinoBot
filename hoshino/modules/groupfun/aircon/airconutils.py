@@ -78,7 +78,8 @@ def new_aircon(num_member, set_temp=26, now_temp=33):
         "volume": volume,
         "wind_rate": 0,
         "balance": 0,
-        "ac_type": AIRCON_HOME
+        "ac_type": AIRCON_HOME,
+        "stats": '❄'
     }
 
 
@@ -145,6 +146,12 @@ def update_aircon(aircon):
 
         aircon["now_temp"] = new_temp
         aircon["last_update"] = new_update
+    if aircon['now_temp'] > aircon["env_temp"]:
+        aircon["stats"] = '☀'
+    elif aircon['now_temp'] == aircon["env_temp"]:
+        aircon['stats'] = '✨'
+    else:
+        aircon['stats'] = '❄'
 
 
 def print_aircon(aircon):

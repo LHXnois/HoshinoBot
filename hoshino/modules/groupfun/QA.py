@@ -10,10 +10,15 @@ groupQ = {}
 userQ = {}
 groupuserQ = {}
 sv = Service('QA', manage_priv=priv.ADMIN, enable_on_default=False, help_='''
-我问你答
-[我问xxx你答yyy]
-每个人每个群数据独立，可以用来存东西（bushi），支持图片
-[不要回答xxx]'''.strip())
+我问你答，调教time！（bushi
+ps：请不要教太多奇怪的东西！
+[我问xxx你答yyy] 添加问答
+*每个人每个群数据独立
+[有人问xxx你答yyy] 添加群内全局问答(管理员限定)
+------如果希望多个答案随机回答可将“你答”改为“你随机答”一个一个添加
+[看看我问] 看看本群个人问题
+[看看有人问] 看看本群全局问题
+[不要回答xxx] 删除回答，多个答案要一个一个删'''.strip())
 
 dbpath = os.path.expanduser('~/.hoshino/QA.db')
 os.makedirs(os.path.dirname(dbpath), exist_ok=True)
@@ -43,25 +48,29 @@ init()
 # recovery from database
 
 
+def cacheinit(gid, uid):
+    if gid not in groupQ:
+        groupQ[gid] = set()
+    if uid not in userQ:
+        userQ[uid] = set()
+    if gid not in groupuserQ:
+        groupuserQ[gid] = {uid: set()}
+    elif uid not in groupuserQ[gid]:
+        groupuserQ[gid][uid] = set()
+
+
 def recovery():
     for qu in QA.select():
+        cacheinit(qu.gid, qu.uid)
         if qu.uid == 1:
             if qu.gid == 1:
                 globalQ.add(qu.quest)
             else:
-                if qu.gid not in groupQ:
-                    groupQ[qu.gid] = set()
                 groupQ[qu.gid].add(qu.quest)
         else:
             if qu.gid == 1:
-                if qu.uid not in userQ:
-                    userQ[qu.uid] = set()
                 userQ[qu.uid].add(qu.quest)
             else:
-                if qu.gid not in groupQ:
-                    groupuserQ[qu.gid] = {qu.uid: set()}
-                if qu.uid not in groupuserQ[qu.gid]:
-                    groupuserQ[qu.gid][qu.uid] = set()
                 groupuserQ[qu.gid][qu.uid].add(qu.quest)
 
 
@@ -161,8 +170,7 @@ async def delqa(bot, ev: CQEvent, Qu: str, gid: int, uid: int):
 async def addGUQA(bot, ev: CQEvent):
     uid = ev.user_id
     gid = ev.group_id
-    if uid not in groupuserQ[gid]:
-        groupuserQ[gid][uid] = set()
+    cacheinit(gid, uid)
     Qu = await storQA(bot, ev, gid, uid)
     groupuserQ[gid][uid].add(Qu)
 
@@ -170,8 +178,7 @@ async def addGUQA(bot, ev: CQEvent):
 @sv.on_prefix('我问')
 async def addUQA(bot, ev: CQEvent):
     uid = ev.user_id
-    if uid not in userQ:
-        userQ[uid] = set()
+    cacheinit(ev.group_id, uid)
     Qu = await storQA(bot, ev, 1, uid)
     userQ[uid].add(Qu)
 
@@ -181,8 +188,7 @@ async def addGQA(bot, ev: CQEvent):
     if priv.check_priv(ev, priv.ADMIN):
         await bot.finish(ev, '管理员才能使用有人问哦')
     gid = ev.group_id
-    if gid not in groupQ:
-        groupQ[gid] = set()
+    cacheinit(gid, ev.user_id)
     Qu = await storQA(bot, ev, gid, 1)
     groupQ[gid].add(Qu)
 
@@ -197,20 +203,22 @@ async def addAQA(bot, ev: CQEvent):
 @sv.on_prefix(('不要回答', '删除问答'))
 async def delQA(bot, ev: CQEvent):
     Qu = await stor_pic(str(ev.message), False)
-    if priv.check_priv(ev, priv.SUPERUSER):
+    cacheinit(ev.group_id, ev.user_id)
+    if priv.check_priv(ev, priv.SUPERUSER) and Qu in globalQ:
         await delqa(bot, ev, Qu, 1, 1)
     gid = ev.group_id
-    if priv.check_priv(ev, priv.ADMIN):
+    if priv.check_priv(ev, priv.ADMIN) and Qu in groupQ[gid]:
         await delqa(bot, ev, Qu, gid, 1)
     uid = ev.user_id
-    await delqa(bot, ev, Qu, 1, uid)
-    await delqa(bot, ev, Qu, gid, uid)
+    if Qu in userQ[uid]:
+        await delqa(bot, ev, Qu, 1, uid)
+    if Qu in groupuserQ[gid][uid]:
+        await delqa(bot, ev, Qu, gid, uid)
 
 
 @sv.on_fullmatch(('看看有人问'))
 async def lookgQA(bot, ev: CQEvent):
-    if ev.group_id not in groupQ:
-        groupQ[ev.group_id] = set()
+    cacheinit(ev.group_id, ev.user_id)
     Qlist = globalQ.union(groupQ[ev.group_id])
     Qlist = ' | '.join(Qlist)
     await bot.send(ev, '本群的问题有：\n'+Qlist)
@@ -220,12 +228,7 @@ async def lookgQA(bot, ev: CQEvent):
 async def lookuQA(bot, ev: CQEvent):
     uid = ev.user_id
     gid = ev.group_id
-    if uid not in userQ:
-        userQ[uid] = set()
-    if gid not in groupuserQ:
-        groupuserQ[gid] = {uid: set()}
-    if uid not in groupuserQ[gid]:
-        groupuserQ[gid][uid] = set()
+    cacheinit(gid, uid)
     Qlist = userQ[uid].union(groupuserQ[gid][uid])
     Qlist = ' | '.join(Qlist)
     await bot.send(ev, '的问题有：\n'+Qlist, at_sender=True)
@@ -236,17 +239,15 @@ async def QandA(bot, ev: CQEvent):
     msg = await stor_pic(str(ev.message), False)
     gid = ev.group_id
     uid = ev.user_id
+    cacheinit(gid, uid)
     if msg in globalQ:
         gid = 1
         uid = 1
-    elif gid in groupQ and msg in groupQ[gid]:
+    elif msg in groupQ[gid]:
         uid = 1
-    elif uid in userQ and msg in userQ[uid]:
+    elif msg in userQ[uid]:
         gid = 1
-    elif gid in groupuserQ and uid in groupuserQ[gid]:
-        if msg not in groupuserQ[gid][uid]:
-            return
-    else:
+    elif msg not in groupuserQ[gid][uid]:
         return
     An = QA.select(QA.answer).where(QA.quest == msg,
                                     QA.gid == gid,

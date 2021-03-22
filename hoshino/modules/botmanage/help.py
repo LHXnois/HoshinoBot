@@ -1,31 +1,35 @@
-from hoshino import Service, priv
-from hoshino.typing import CQEvent
+from hoshino import Service, priv, R, util
+from hoshino.typing import CQEvent, MessageSegment
 
 sv = Service('_help_', manage_priv=priv.SUPERUSER, visible=False)
 
 TOP_MANUAL = '''
-=====================
-- HoshinoBot使用说明 -
-=====================
+===================
+   - HoshinoBot -
+- Kokkoro Edition -
+    - 使用说明 -
+===================
 发送方括号[]内的关键词即可触发
+※#前缀也可以用bot昵称或@bot代替
 ※功能采取模块化管理，群管理可控制开关
 
-[!帮助] 会战管理v2
-[怎么拆日和] 竞技场查询
-[星乃来发十连] 转蛋模拟
-[pcr速查] 常用网址
-[官漫132] 四格漫画（日）
+[!帮助] 会战管理v2<未开启>
+[#怎么拆日和] 竞技场查询
+[#十连] 转蛋模拟
+[#pcr速查] 常用网址
 [切噜一下] 切噜语转换
 [lssv] 查看功能模块的开关状态（群管理限定）
-[来杯咖啡] 联系维护组
+[来杯咖啡] 骚扰蓝红心（bushi
+[喵] 和bot用猫猫语交流
 
 发送以下关键词查看更多：
-[帮助pcr会战]
-[帮助pcr查询]
-[帮助pcr娱乐]
-[帮助pcr订阅]
-[帮助kancolle]
-[帮助通用]
+[#帮助pcr会战]
+[#帮助pcr查询]
+[#帮助pcr娱乐]
+[#帮助pcr订阅]
+[#helpfun]
+[#helpmaster]
+[#help通用]
 ========
 ※除这里中写明外 另有其他隐藏功能:)
 ※隐藏功能属于赠品 不保证可用性
@@ -47,13 +51,18 @@ def gen_bundle_manual(bundle_name, service_list, gid):
     return '\n'.join(manual)
 
 
-@sv.on_prefix(('help', '帮助'))
+@sv.on_prefix(('help', '帮助'), only_to_me=True)
 async def send_help(bot, ev: CQEvent):
     bundle_name = ev.message.extract_plain_text().strip()
     bundles = Service.get_bundles()
     if not bundle_name:
-        await bot.send(ev, TOP_MANUAL)
+        msg = TOP_MANUAL
     elif bundle_name in bundles:
         msg = gen_bundle_manual(bundle_name, bundles[bundle_name], ev.group_id)
-        await bot.send(ev, msg)
-    # else: ignore
+    elif bundle_name in 'bundle系列':
+        msg = '\n'.join(bundles.keys())
+    else:
+        return
+    msg = R.text2pic(msg)
+    msg = MessageSegment.image(util.pic2b64(msg))
+    await bot.send(ev, msg)

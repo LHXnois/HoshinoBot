@@ -4,7 +4,7 @@ from hoshino.typing import CQEvent
 from hoshino.util import DailyNumberLimiter, escape
 from .pcrColleciton import pcrCoins
 
-sv = Service('pcr-login-bonus', bundle='pcr娱乐', help_='[星乃签到] 给主さま盖章章')
+sv = Service('pcr-login-bonus', bundle='pcr娱乐', help_='[#签到] 给主さま盖章章')
 
 lmt = DailyNumberLimiter(1)
 login_presents = [
