@@ -116,11 +116,19 @@ def concat_pic(pics, border=5, t=255):
 def tlen(text: str, font_size: int):
     length = 0
     for i in text:
-        if re.search(r'[0-9a-zA-Z]', i):
-            length += font_size // 2
+        if i == '\n':
+            continue
+        if i in '-':
+            length += font_size / 3
+        elif re.search(r'[a-z]', i) or i in '=][ ':
+            length += font_size / 2
+        elif re.search(r'[0-9]', i):
+            length += font_size*7 / 10
+        elif re.search(r'[A-Z]', i):
+            length += font_size*2 / 3
         else:
             length += font_size
-    return length
+    return round(length+0.5)
 
 def normalize_str(string) -> str:
     """

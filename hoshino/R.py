@@ -268,7 +268,7 @@ def add_text(img: Image, text: str, textsize: int,
 def textline2pic(text: str, textsize: int, textfill='black', t=255) -> Image:
     length = util.tlen(text, textsize)
     dsc = Image.new('RGBA', (length, textsize), (255, 255, 255, t))
-    img = add_text(dsc, text, textsize, 'simhei.ttf', textfill)
+    img = add_text(dsc, text, textsize, 'hkww.ttf', textfill)
     return img
 
 
