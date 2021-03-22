@@ -39,7 +39,8 @@ subr_dic['illust'] = {
             visible=False): ['shiratamacaron', 'k_yuizaki', 'suzukitoto0323',
                              'tsukimi08', 'blade4649', 'itiri', 'MauveSR',
                              'hoshi_u3', 'gurasion0310', 'amsrntk3',
-                             'nejikirio', 'siragagaga', 'kedamaa'],
+                             'nejikirio', 'siragagaga', 'kedamaa',
+                             'chatsune21'],
 }
 
 latest_info = {}
@@ -86,7 +87,7 @@ async def tweet_formatter(item):
         img = []
         is_extend = 'extended_' if 'extended_entities' in item else ''
         for i in item[f'{is_extend}entities']['media']:
-            if i['type'] in 'photoanimated_gif':
+            if i['type'] in 'photoanimated_gifvideo':
                 url = i['media_url']
                 imgname = url.split('/')[-1]
                 imgget = await R.tem_img('twitter', imgname).download(url, True)
@@ -148,7 +149,7 @@ async def twitter_poller_news():
     await twitter_poller('news')
 
 
-@sv.scheduled_job('interval', hours=3)
+@sv.scheduled_job('interval', hours=2)
 async def twitter_poller_illust():
     await twitter_poller('illust')
     util.add_delay_job(twitter_poller, 'illustpoller', 300, ['illust'])
