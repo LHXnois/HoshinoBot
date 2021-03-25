@@ -50,13 +50,13 @@ async def drop_admin(bot, ev: CQEvent):
 async def set_title(bot, ev):
     if not priv.check_priv(ev, priv.PYUSER):
         await bot.finish(ev, '权限不够哦', at_sender=True)
-    firm = ev.message[0]
-    if firm['type'] == 'at' and firm['data']['qq'] != 'all':
-        uid = firm['data']['qq']
-        s = ev.message.extract_plain_text().strip()
-        if await Gm(ev).title_set(
-                user_id=uid, title=s) == Gm.PRIV_NOT_ENOUGH:
-            await bot.finish(ev, '在下好像不是群主呢...', at_sender=True)
+    for i in ev.message:
+        if i['type'] == 'at' and i['data']['qq'] != 'all':
+            uid = i['data']['qq']
+            s = ev.message.extract_plain_text(reduce=True, gap='').strip()
+            if await Gm(ev).title_set(
+                    user_id=uid, title=s) == Gm.PRIV_NOT_ENOUGH:
+                await bot.finish(ev, '在下好像不是群主呢...', at_sender=True)
 
 ready_kick_group = {1111: {'test': []}}
 @sv.on_prefix(('飞机票', '飞了他', '踢了他'))
@@ -219,13 +219,13 @@ async def all_silence(bot, ev: CQEvent):
 async def set_card(bot, ev:CQEvent):
     if not priv.check_priv(ev, priv.PYUSER):
         await bot.finish(ev, '权限不够哦', at_sender=True)
-    firm = ev.message[0]
-    if firm['type'] == 'at' and firm['data']['qq'] != 'all':
-        uid = firm['data']['qq']
-        s = ev.message.extract_plain_text().strip()
-        if await Gm(ev).card_set(
-                user_id=uid, card_text=s) == Gm.PRIV_NOT_ENOUGH:
-            await bot.finish(ev, '在下好像不是管理呢...', at_sender=True)
+    for i in ev.message:
+        if i['type'] == 'at' and i['data']['qq'] != 'all':
+            uid = i['data']['qq']
+            s = ev.message.extract_plain_text(reduce=True, gap='').strip()
+            if await Gm(ev).card_set(
+                    user_id=uid, card_text=s) == Gm.PRIV_NOT_ENOUGH:
+                await bot.finish(ev, '在下好像不是管理呢...', at_sender=True)
 
 
 @sv.on_prefix('设置群名', only_to_me=True)

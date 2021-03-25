@@ -65,15 +65,15 @@ async def set_title(bot, ev):
 async def suset_title(bot, ev):
     if not priv.check_priv(ev, priv.PYUSER):  # master限定
         return
-    firm = ev.message[0]
-    if firm['type'] == 'at' and firm['data']['qq'] != 'all':
-        uid = firm['data']['qq']
-        s = ev.message.extract_plain_text()
-        await Gm(ev).title_set(
-            user_id=uid,
-            title=s,
-        )
-        pohaiadd(ev.group_id, uid)
+    for i in ev.message:
+        if i['type'] == 'at' and i['data']['qq'] != 'all':
+            uid = i['data']['qq']
+            s = ev.message.extract_plain_text(reduce=True, gap='')
+            await Gm(ev).title_set(
+                user_id=uid,
+                title=s,
+            )
+            pohaiadd(ev.group_id, uid)
 
 
 @sv.on_prefix(('不迫害', '不再迫害'), only_to_me=True)
