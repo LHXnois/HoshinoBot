@@ -13,7 +13,7 @@ TOP_MANUAL = '''
 ※#前缀也可以用bot昵称或@bot代替
 ※功能采取模块化管理，群管理可控制开关
 
-[!帮助] 会战管理v2<未开启>
+[help] yobot帮助
 [#怎么拆日和] 竞技场查询
 [#十连] 转蛋模拟
 [#pcr速查] 常用网址
@@ -23,10 +23,10 @@ TOP_MANUAL = '''
 [喵] 和bot用猫猫语交流
 
 发送以下关键词查看更多：
-[#帮助pcr会战]
-[#帮助pcr查询]
-[#帮助pcr娱乐]
-[#帮助pcr订阅]
+[#helppcr会战]
+[#helppcr查询]
+[#helppcr娱乐]
+[#helppcr订阅]
 [#helpfun]
 [#helpmaster]
 [#help通用]
