@@ -5,12 +5,11 @@ import random
 from datetime import timedelta
 
 from nonebot import on_command
-from nonebot.message import _check_calling_me_nickname
 
 import hoshino
-from hoshino import R, util, trigger
-from hoshino.typing import CQEvent, Union
-from aiocqhttp import Message
+from hoshino import R, util
+from hoshino.typing import CQEvent
+from hoshino.Gm import Gm
 '''
 from nonebot.command import CommandManager
 def parse_command(bot, cmd_str):
@@ -60,50 +59,7 @@ async def hb_handler(ctx):
                 pass
 
 '''
-from nonebot.command import CommandManager
 
-
-def parse_command(bot, cmd_str, NOTLOG=False):
-    parse_command = CommandManager().parse_command(bot, cmd_str, NOTLOG)
-    return parse_command
-
-
-using_cmd_msg = {}
-
-
-def check_command(msg) -> str:
-    if type(msg) is str:
-        message = Message(msg)
-        rmessage = msg
-    elif type(msg) is CQEvent:
-        message = msg.message
-        rmessage = msg.raw_message
-        msg = msg.raw_message
-    else:
-        return None
-    if msg in using_cmd_msg:
-        return using_cmd_msg[msg]
-    ev = {
-        "message":  message,
-        "message_type": "group",
-        "post_type": "message",
-        "raw_message": rmessage,
-        "sub_type": "normal",
-        }
-    event = CQEvent().from_payload(ev)
-    event['to_me'] = False
-    _check_calling_me_nickname(hoshino.get_bot(), event)
-    for t in trigger.chain:
-        if sf := t.find_handler(event):
-            if sf.only_to_me and not event['to_me']:
-                continue
-            using_cmd_msg[msg] = t.__class__.__name__
-            return t.__class__.__name__
-    cmd_str = event.plain_text
-    cmd, _ = parse_command(hoshino.get_bot(), cmd_str=cmd_str, NOTLOG=True)
-    if cmd:
-        using_cmd_msg[msg] = str(cmd.name)
-        return str(cmd.name)
 
 # ============================================ #
 
@@ -147,7 +103,7 @@ async def hb_handler(ev: CQEvent):
     else:
         return
     if title:
-        if check_command(title):
+        if Gm.check_command(title):
             group_id = ev.group_id
             user_id = ev.user_id
             self_id = ev.self_id

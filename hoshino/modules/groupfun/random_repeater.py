@@ -2,7 +2,7 @@ import random
 import hoshino
 from hoshino import Service, util, R
 from hoshino.typing import CQEvent, CQHttpError
-from ..groupmaster.anti_abuse import check_command
+from hoshino.Gm import Gm
 from PIL import ImageSequence
 from pygtrie import CharTrie
 sv = Service('random-repeater', help_='随机复读机pro', bundle='fun')
@@ -36,7 +36,7 @@ async def random_repeater(bot, ev: CQEvent):
             if random.random() < p:    # 概率测试通过，复读并设flag
                 try:
                     group_stat[group_id] = (msg, True, 0)
-                    if not check_command(ev):
+                    if not Gm.check_command(ev):
                         await _repeater(bot, ev, 0.3*(1-p))
                 except CQHttpError as e:
                     hoshino.logger.error(f'复读失败: {type(e)}')
@@ -209,7 +209,7 @@ async def taowabot(bot, ev: CQEvent):
             return
     msg = str(ev.message)
     if (taowa := check_taowa(msg)):
-        if check_command(ev):
+        if Gm.check_command(ev):
             return
         if taowa[0] in NOTAOWA_WORD or taowa[1] in NOTAOWA_WORD:
             return
