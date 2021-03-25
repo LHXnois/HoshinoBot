@@ -51,10 +51,9 @@ async def set_title(bot, ev):
     if pohaicheck(ev.group_id, user_id):
         return
     s = ev.message.extract_plain_text()
-    if not _nlmt.check(user_id) and ev.user_id not in hoshino.config.SUPERUSERS or hoshino.config.PYUSERS:
+    if not _nlmt.check(user_id) and not priv.check_priv(ev, priv.PYUSER):
         await bot.finish(ev, '新头衔要好好佩戴哦(自主申请头衔限每天一次，明天5点再来吧~)', at_sender=True)
     _nlmt.increase(user_id, 1)
-    # await check_cd(bot, ev, Timecd)
     await Gm(ev).title_set(
         user_id=user_id,
         title=s,
@@ -120,6 +119,9 @@ def rand_zhongername():
     if random.random() < 0.8:
         title = random.choice(titledata["partF"]) + \
             random.choice(titledata["partG"])
+        if len(title) < 6 and random.random() < 0.3:
+            if title[2] not in "の的之":
+                title = title[0:2]+random.choice('の之')+title[2:]
         if random.random() < 0.1:
             if title[2] in "の的之":
                 title = title[3:] + title[2] + title[0:2]
@@ -159,7 +161,7 @@ def rand_title(choice='all'):
 
 
 async def check_cd(bot, ev, addcd):
-    if ev.user_id in hoshino.config.SUPERUSERS or hoshino.config.PYUSERS:
+    if priv.check_priv(ev, priv.PYUSER):
         return
     if not _flmt.check(ev.user_id):
         cd = int(_flmt.left_time(ev.user_id))
