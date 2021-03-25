@@ -4,7 +4,7 @@ from hoshino.typing import CQEvent
 from aiocqhttp import Message
 import random
 from hoshino import Service, priv, R
-from hoshino.modules.groupmaster.anti_abuse import check_command
+from hoshino.Gm import Gm
 globalQ = set()
 groupQ = {}
 userQ = {}
@@ -103,7 +103,7 @@ async def storQA(bot, ev: CQEvent, gid: int, uid: int) -> str:
         await bot.finish(ev, '问题不能为空哦')
     if msg[1] == '':
         await bot.finish(ev, '回答不能为空哦')
-    if check_command(msg[0]):
+    if Gm.check_command(msg[0]):
         await bot.finish(ev, '与指令冲突哦')
     Qu = await stor_pic(msg[0], False)
     An = await stor_pic(msg[1])

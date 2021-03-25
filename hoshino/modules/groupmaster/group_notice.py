@@ -2,7 +2,7 @@ import random
 import hoshino
 from hoshino import Service, R
 from hoshino.typing import NoticeSession
-from hoshino.Groupmaster import Groupmaster as Gm
+from hoshino.Gm import Gm
 
 sv1 = Service('group-leave-notice', help_='退群通知', bundle='master')
 
@@ -37,5 +37,5 @@ async def increace_welcome(session: NoticeSession):
     gid = session.event.group_id
     if gid in welcomes:
         await session.send(welcomes[gid], at_sender=True)
-    # elif 'default' in welcomes:
-    #     await session.send(welcomes['default'], at_sender=True)
+    elif 'default' in welcomes:
+        await session.send(welcomes['default'], at_sender=True)

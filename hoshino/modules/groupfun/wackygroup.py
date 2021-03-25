@@ -3,7 +3,7 @@ import pytz
 from datetime import datetime
 from urllib import parse
 from hoshino import R, Service, util, SubService, aiorequests
-from hoshino.Groupmaster import Groupmaster
+from hoshino.Gm import Gm
 from hoshino.typing import CQEvent
 
 sv = Service('wackiness', help_='''整活小功能们''', visible=False, bundle='fun')
@@ -139,22 +139,24 @@ async def weiba(bot, ev: CQEvent):
     ecode = u'\u202d'
     kw = ev.message.extract_plain_text().strip()
     weiba = fcode+kw[::-1]+ecode
-    Gm = Groupmaster(ev)
-    oldcard = await Gm.member_info(ev.user_id, 'card')
+    Gm_ = Gm(ev)
+    oldcard = await Gm_.member_info(ev.user_id, 'card')
     if not oldcard:
-        oldcard = await Gm.member_info(ev.user_id, 'nickname')
+        oldcard = await Gm_.member_info(ev.user_id, 'nickname')
     newcard = oldcard+weiba
     try:
-        await Gm.card_set(ev.user_id, newcard)
+        if await Gm_.card_set(ev.user_id, newcard) == Gm_.PRIV_NOT_ENOUGH:
+            await bot.send(ev, '好像不能亲手给你戴上呢> <，请自己全选复制换上去吧~', at_sender=True)
+            await bot.send(ev, newcard)
     except Exception as e:
         sv.logger.error(e)
-        await bot.send(ev, '好像没办亲手给你戴上呢> <，请自己全选复制换上去吧~', at_sender=True)
+        await bot.send(ev, '好像不能亲手给你戴上呢> <，请自己全选复制换上去吧~', at_sender=True)
         await bot.send(ev, newcard)
 
 
 @Lw.on_fullmatch(('迫害龙王', '谁是龙王'), only_to_me=True)
 async def longwang(bot, ev: CQEvent):
-    longwang = await Groupmaster(ev).honor_info(
+    longwang = await Gm(ev).honor_info(
         honor_type='talkative', key='current_talkative')
     if not longwang:
         await bot.finish(ev, '没有龙王')

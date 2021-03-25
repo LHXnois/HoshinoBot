@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFilter
 from hoshino import R, Service
 from hoshino.util import pic2b64, FreqLimiter
 from hoshino.typing import CQEvent, MessageSegment
-from hoshino.Groupmaster import Groupmaster as Gm
+from hoshino.Gm import Gm
 
 sv = Service('generator', help_='''
 生成器

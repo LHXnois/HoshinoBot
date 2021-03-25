@@ -1,5 +1,5 @@
 from hoshino import Service, R, priv, util
-from hoshino.Groupmaster import Groupmaster as Gm
+from hoshino.Gm import Gm
 from hoshino.typing import CQEvent
 from hoshino.msghandler import anonymous_list
 from string import ascii_letters

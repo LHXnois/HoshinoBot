@@ -1,22 +1,29 @@
 import hoshino
-from hoshino import R
-from hoshino.typing import CQEvent
+from hoshino import R, util, trigger
+from hoshino.typing import CQEvent, Message
+
+from nonebot.command import CommandManager
+from nonebot.message import _check_calling_me_nickname
+
 import random
 
 
-class Groupmaster:
+using_cmd_msg = {}
+
+
+class Gm:
     managegroups = {'default': {'role': 'member', 'needroleupdate': True}}
     PRIV_NOT_ENOUGH = 1000
+    bot = hoshino.get_bot()
 
     def __init__(self, ev: CQEvent = None, self_id: int = 0, group_id: int = 0):
-        self.bot = hoshino.get_bot()
         if not ev:
             self.sid = self_id
             self.gid = group_id
         else:
             self.sid = ev.self_id
             self.gid = ev.group_id
-        mg = Groupmaster.managegroups
+        mg = Gm.managegroups
         if self.gid in mg:
             self.role = mg[self.gid]['role']
         else:
@@ -160,7 +167,7 @@ class Groupmaster:
                 self.privs['needroleupdate'] = False
         else:
             self.privs['needroleupdate'] = False
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
 
     # 头衔申请
     async def title_set(self, user_id, title):
@@ -176,7 +183,7 @@ class Groupmaster:
                 self.privs['needroleupdate'] = False
         else:
             self.privs['needroleupdate'] = False
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
 
     # 群组踢人
     async def member_kick(self, user_id: int, is_reject: bool = False):
@@ -192,7 +199,7 @@ class Groupmaster:
                 self.privs['needroleupdate'] = False
         else:
             self.privs['needroleupdate'] = False
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
 
     # 单人禁言
     async def member_silence(self, time: int, user_id: int = None, anonymous_flag: str = None):
@@ -218,7 +225,7 @@ class Groupmaster:
                 self.privs['needroleupdate'] = False
         else:
             self.privs['needroleupdate'] = False
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
 
     # 全员禁言
     async def group_silence(self, status: bool = True):
@@ -233,7 +240,7 @@ class Groupmaster:
                 self.privs['needroleupdate'] = False
         else:
             self.privs['needroleupdate'] = False
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
 
     # 群名片修改
     async def card_set(self, user_id: int, card_text: str = ''):
@@ -248,7 +255,7 @@ class Groupmaster:
                 hoshino.logger.exception(e)
                 self.privs['needroleupdate'] = False
         else:
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
 
     # 群名修改
     async def groupname_set(self, name: str):
@@ -263,7 +270,7 @@ class Groupmaster:
                 self.privs['needroleupdate'] = False
         else:
             self.privs['needroleupdate'] = False
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
 
     # 设置精华消息
     async def essence_set(self, msg_id: int):
@@ -277,7 +284,7 @@ class Groupmaster:
                 self.privs['needroleupdate'] = False
         else:
             self.privs['needroleupdate'] = False
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
 
     # 发公告
     async def group_notice(self, content: str):
@@ -292,4 +299,47 @@ class Groupmaster:
                 self.privs['needroleupdate'] = False
         else:
             self.privs['needroleupdate'] = False
-            return Groupmaster.PRIV_NOT_ENOUGH
+            return Gm.PRIV_NOT_ENOUGH
+
+
+    @classmethod
+    def parse_command(self, cmd_str, NOTLOG=False):
+        parse_command = CommandManager().parse_command(
+            self.bot, cmd_str, NOTLOG)
+        return parse_command
+
+
+    @classmethod
+    def check_command(self, msg) -> str:
+        if type(msg) is str:
+            message = Message(msg)
+            rmessage = msg
+        elif type(msg) is CQEvent:
+            message = msg.message
+            rmessage = msg.raw_message
+            msg = msg.raw_message
+        else:
+            return None
+        if msg in using_cmd_msg:
+            return using_cmd_msg[msg]
+        ev = {
+            "message":  message,
+            "message_type": "group",
+            "post_type": "message",
+            "raw_message": rmessage,
+            "sub_type": "normal",
+            }
+        event = CQEvent().from_payload(ev)
+        event['to_me'] = False
+        _check_calling_me_nickname(self.bot, event)
+        for t in trigger.chain:
+            if sf := t.find_handler(event):
+                if sf.only_to_me and not event['to_me']:
+                    continue
+                using_cmd_msg[msg] = t.__class__.__name__
+                return t.__class__.__name__
+        cmd_str = event.plain_text
+        cmd, _ = self.parse_command(cmd_str=cmd_str, NOTLOG=True)
+        if cmd:
+            using_cmd_msg[msg] = str(cmd.name)
+            return str(cmd.name)

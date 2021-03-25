@@ -1,7 +1,7 @@
 import random
 import re
 from hoshino import Service, R, priv
-from hoshino.Groupmaster import Groupmaster as Gm
+from hoshino.Gm import Gm
 from hoshino.util import FreqLimiter, DailyNumberLimiter
 import hoshino
 
