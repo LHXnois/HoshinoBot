@@ -13,6 +13,7 @@ from hoshino.typing import Union
 import re
 import random
 import filetype
+import moviepy.editor as mpe
 
 
 class ResObj:
@@ -36,6 +37,31 @@ class ResObj:
     @property
     def exist(self):
         return os.path.exists(self.path)
+
+    def delete(self):
+        if self.exist:
+            try:
+                os.remove(self.path)
+            except Exception as e:
+                hoshino.logger.exception(e)
+
+    async def download(self, url: str, use_proxie=False, proxies=Proxies):
+        hoshino.logger.info(f'download_res from {url}')
+        if use_proxie:
+            resp = await aiorequests.get(url, stream=True, proxies=proxies)
+        else:
+            resp = await aiorequests.get(url, stream=True)
+        hoshino.logger.debug(f'status_code={resp.status_code}')
+        if 200 == resp.status_code:
+            try:
+                content = await resp.content
+                hoshino.logger.debug(f'saving to {self.path}')
+                with open(self.path, 'wb') as f:
+                    f.write(content)
+                    hoshino.logger.debug('saved!')
+                    return self
+            except Exception as e:
+                hoshino.logger.exception(e)
 
 
 class ResImg(ResObj):
@@ -120,13 +146,6 @@ class TemImg(ResImg):
         else:
             return os.path.join(hoshino.config.RES_DIR, self.__path)
 
-    def delete(self):
-        if self.exist:
-            try:
-                os.remove(self.path)
-            except Exception as e:
-                hoshino.logger.exception(e)
-
     async def download(self, url: str, use_proxie=False, proxies=Proxies):
         hoshino.logger.info(f'download_tem_img from {url}')
         if use_proxie:
@@ -186,6 +205,30 @@ class TemImg(ResImg):
         self.__path = self.__path+'.'+suffix
 
 
+class TemVideo(ResObj):
+
+    def __init__(self, res_path):
+        super().__init__(res_path)
+        self.filename = os.path.splitext(os.path.basename(self.path))[0]
+        if not self.exist:
+            dirpath = os.path.split(self.path)[0]
+            if not os.path.exists(dirpath):
+                os.makedirs(dirpath, exist_ok=True)
+
+
+    @property
+    def gif(self):
+        giftem = tem_img('vedio2gif', self.filename+'.gif')
+        cache = mpe.VideoFileClip(self.path)
+        #todo toobiggif
+        cache.write_gif(giftem.path)
+        return giftem
+
+    @property
+    def cqcode(self):
+        return self.gif.cqcode
+
+
 def get(path, *paths):
     return ResObj(os.path.join(path, *paths))
 
@@ -210,6 +253,17 @@ def font(path, *paths):
 
 def tem_img(path, *paths, **args):
     return TemImg(os.path.join('tem/img', path, *paths), **args)
+
+
+def tem_video(path, *paths):
+    return TemVideo(os.path.join('tem/video', path, *paths))
+
+
+def tem(ttype, path,  *paths, **args):
+    if ttype == 'img':
+        return tem_img(path, *paths, **args)
+    elif ttype == 'video':
+        return tem_video(path, *paths)
 
 
 async def tem_gocqimg(url_path, headers=None, thread_count=1):

@@ -88,9 +88,25 @@ async def tweet_formatter(item):
         is_extend = 'extended_' if 'extended_entities' in item else ''
         for i in item[f'{is_extend}entities']['media']:
             if i['type'] in 'photoanimated_gifvideo':
-                url = i['media_url']
-                imgname = url.split('/')[-1]
-                imgget = await R.tem_img('twitter', imgname).download(url, True)
+                if i['type'] == 'photo':
+                    url = i['media_url']
+                    ttype = 'img'
+                    imgname = url.split('/')[-1]
+                    imgget = await R.tem(
+                        ttype, 'twitter', imgname).download(url, True)
+                elif i['type'] in 'animated_gifvideo':
+                    url = i['video_info']['variants'][0]['url']
+                    ttype = 'video'
+                    imgname = url.split('/')[-1]
+                    try:
+                        imgget = await R.tem(
+                            ttype, 'twitter', imgname).download(url, True)
+                    except Exception:
+                        url = i['media_url']
+                        ttype = 'img'
+                        imgname = url.split('/')[-1]
+                        imgget = await R.tem(
+                            ttype, 'twitter', imgname).download(url, True)
                 img.append(f"{imgget.cqcode}")
         img = '\n'.join(img)
     else:
