@@ -1,20 +1,15 @@
 import datetime
-import os
-import hoshino
+from hoshino.R import data
 
-try:
-    import ujson as json
-except:
-    import json
 
-R = 8.314  #理想气体常数
-i = 6  #多分子气体自由度
-K = 273  #开氏度
-vgas = 22.4  #气体摩尔体积
-unit_volume = 2  #每人体积
-aircon_off = 0.05  #关空调后每秒温度变化量
-ac_volume = [0.178, 0.213, 0.267]  #每秒进风量
-powers = [5000, 6000, 7500]  #功率
+R = 8.314  # 理想气体常数
+i = 6  # 多分子气体自由度
+K = 273  # 开氏度
+vgas = 22.4  # 气体摩尔体积
+unit_volume = 2  # 每人体积
+aircon_off = 0.05  # 关空调后每秒温度变化量
+ac_volume = [0.178, 0.213, 0.267]  # 每秒进风量
+powers = [5000, 6000, 7500]  # 功率
 volume_text = ["低", "中", "高"]
 
 ac_central_power = 7500
@@ -32,39 +27,32 @@ required_ranges = {
     "ac_type": (0, 1, 0)
 }
 
+airconsdata = data('groupfun/aircon.json', 'json')
+
 
 def sgn(diff):
     return 1 if diff > 0 else -1 if diff < 0 else 0
 
 
-def get_group_aircon(builtin_path):
+def get_group_aircon():
 
     global required_ranges
 
-    filename = os.path.join(os.path.dirname(builtin_path), 'aircon.json')
+    aircons = airconsdata.read
 
-    try:
-        with open(filename, encoding='utf8') as f:
-            aircons = json.load(f)
+    for gid in aircons:
+        aircon = aircons[gid]
+        for item in required_ranges:
+            low, high, default = required_ranges[item]
+            if (item not in aircon) or (
+                    not low <= aircon[item] <= high):
+                aircon[item] = default
 
-            for gid in aircons:
-                aircon = aircons[gid]
-                for item in required_ranges:
-                    low, high, default = required_ranges[item]
-                    if (item not in aircon) or (
-                            not low <= aircon[item] <= high):
-                        aircon[item] = default
-
-            return aircons
-
-    except Exception as e:
-        return {}
+    return aircons
 
 
-def write_group_aircon(builtin_path, aircons):
-    filename = os.path.join(os.path.dirname(builtin_path), 'aircon.json')
-    with open(filename, 'w', encoding='utf8') as f:
-        json.dump(aircons, f, ensure_ascii=False)
+def write_group_aircon(aircons):
+    airconsdata.write(aircons)
 
 
 def new_aircon(num_member, set_temp=26, now_temp=33):
@@ -141,11 +129,12 @@ def update_aircon(aircon):
 
         direction = sgn(env_temp - now_temp)
         new_temp = now_temp + direction * timedelta * aircon_off
-        if (env_temp - now_temp) * (env_temp - new_temp) < 0:  #过头了
+        if (env_temp - now_temp) * (env_temp - new_temp) < 0:  # 过头了
             new_temp = env_temp
 
         aircon["now_temp"] = new_temp
         aircon["last_update"] = new_update
+
     if aircon['now_temp'] > aircon["env_temp"]:
         aircon["stats"] = '☀'
     elif aircon['now_temp'] == aircon["env_temp"]:

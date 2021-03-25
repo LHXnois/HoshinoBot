@@ -1,11 +1,6 @@
-import datetime
 from .airconutils import get_group_aircon, write_group_aircon, update_aircon, new_aircon, print_aircon
 from hoshino import Service
 
-try:
-    import ujson as json
-except:
-    import json
 
 sv = Service('aircon', visible=True, help_='''群内空调开放！
 [#开/关空调] 开/关空调，首次使用开空调时会自动安装空调
@@ -19,7 +14,7 @@ ac_type_text = ["家用空调", "中央空调"]
 AIRCON_HOME = 0
 AIRCON_CENTRAL = 1
 
-aircons = get_group_aircon(__file__)
+aircons = get_group_aircon()
 
 
 async def check_status(gid, bot, event, need_on=True):
@@ -44,7 +39,7 @@ async def check_range(bot, event, low, high, errormsg, special=None):
 
     try:
         val = int(msg[0])
-    except:
+    except Exception:
         await bot.send(event, f"⚠️输入有误！只能输入{low}至{high}的整数")
         return None
 
@@ -69,13 +64,13 @@ async def aircon_on(bot, event):
     else:
         aircon = aircons[gid]
         if aircon["is_on"]:
-            await bot.send(event, "❄空调开着呢！")
+            await bot.send(event, aircon['stats'] + "空调开着呢！")
             return
 
     update_aircon(aircon)
     aircon['is_on'] = True
-    write_group_aircon(__file__, aircons)
-    await bot.send(event, "❄哔~空调已开")
+    write_group_aircon(aircons)
+    await bot.send(event, aircon['stats'] + "哔~空调已开")
 
 
 @sv.on_fullmatch('关空调', only_to_me=True)
@@ -89,7 +84,7 @@ async def aircon_off(bot, event):
 
     update_aircon(aircon)
     aircon['is_on'] = False
-    write_group_aircon(__file__, aircons)
+    write_group_aircon(aircons)
     await bot.send(event, '💤哔~空调已关')
 
 
@@ -105,7 +100,7 @@ async def aircon_now(bot, event):
     aircon = aircons[gid]
     update_aircon(aircon)
     msg = print_aircon(aircon)
-    write_group_aircon(__file__, aircons)
+    write_group_aircon(aircons)
 
     if not aircon["is_on"]:
         msg = "💤空调未开启\n" + msg
@@ -136,7 +131,7 @@ async def set_temp(bot, event):
     update_aircon(aircon)
     aircon["set_temp"] = set_temp
     msg = print_aircon(aircon)
-    write_group_aircon(__file__, aircons)
+    write_group_aircon(aircons)
     await bot.send(event, aircon['stats'] + msg)
 
 
@@ -164,7 +159,7 @@ async def set_wind_rate(bot, event):
     update_aircon(aircon)
     aircon["wind_rate"] = wind_rate - 1
     msg = print_aircon(aircon)
-    write_group_aircon(__file__, aircons)
+    write_group_aircon(aircons)
     await bot.send(event, aircon['stats'] + msg)
 
 
@@ -190,10 +185,10 @@ async def set_env_temp(bot, event):
     update_aircon(aircon)
     aircon["env_temp"] = env_temp
     msg = print_aircon(aircon)
-    write_group_aircon(__file__, aircons)
+    write_group_aircon(aircons)
 
     if not aircon["is_on"]:
-        msg = "💤空调未开启\n" + msg
+        msg = "💤空调未开启"
     else:
         msg = aircon['stats'] + msg
 
@@ -234,9 +229,8 @@ async def upgrade_aircon(bot, event):
     update_aircon(aircon)
     ac_type += 1
     aircon["ac_type"] = ac_type
-    msg = print_aircon(aircon)
-    write_group_aircon(__file__, aircons)
-    msg = f"{aircon['stats']}已升级至{ac_type_text[ac_type]}~\n" + msg
+    write_group_aircon(aircons)
+    msg = f"{aircon['stats']}已升级至{ac_type_text[ac_type]}~"
     await bot.send(event, msg)
 
 
@@ -258,7 +252,6 @@ async def downgrade_aircon(bot, event):
     update_aircon(aircon)
     ac_type -= 1
     aircon["ac_type"] = ac_type
-    msg = print_aircon(aircon)
-    write_group_aircon(__file__, aircons)
-    msg = f"{aircon['stats']}已降级至{ac_type_text[ac_type]}~\n" + msg
+    write_group_aircon(aircons)
+    msg = f"{aircon['stats']}已降级至{ac_type_text[ac_type]}~"
     await bot.send(event, msg)
