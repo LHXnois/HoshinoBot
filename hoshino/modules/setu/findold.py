@@ -11,8 +11,12 @@ EXCEED_NOTICE = f'您今天已经冲过{_max}次了，请明早5点后再来！'
 _nlmt = DailyNumberLimiter(_max)
 _flmt = FreqLimiter(5)
 
-sv = Service('setu', manage_priv=priv.SUPERUSER,
-             enable_on_default=True, visible=False)
+sv = Service('findold', manage_priv=priv.SUPERUSER,
+             enable_on_default=True, help_='''
+取自一位一般互联网用户的qq图片文件夹）
+涩图:沙雕图:表情包=8:1:1
+[#考古] 从历史中扒拉一张图
+ps：加数字可一次取多张，最多5 如#考古5''')
 setu_folder = R.img('setu/').path
 
 
@@ -25,19 +29,19 @@ def setu_gener(folder=''):
                 yield R.img(f'setu/{folder}', filename)
 
 
-defaultsetu_gener = setu_gener()
+# defaultsetu_gener = setu_gener()
 old_gener = setu_gener('oldimgs')
 
 
-def get_setu():
-    return defaultsetu_gener.__next__()
+''' def get_setu():
+    return defaultsetu_gener.__next__() '''
 
 
 def find_old():
     return old_gener.__next__()
 
 
-#@sv.on_rex(r'不够[涩瑟色]|[涩瑟色]图|来一?[点份张].*[涩瑟色]|再来[点份张]|看过了|铜')
+''' #@sv.on_rex(r'不够[涩瑟色]|[涩瑟色]图|来一?[点份张].*[涩瑟色]|再来[点份张]|看过了|铜')
 async def setu(bot, ev):
     """随机叫一份涩图，对每个用户有冷却时间"""
     uid = ev['user_id']
@@ -59,7 +63,7 @@ async def setu(bot, ev):
         try:
             await bot.send(ev, '涩图太涩，发不出去勒...')
         except Exception:
-            pass
+            pass '''
 
 @sv.on_prefix('考古')
 async def find_olds(bot, ev):

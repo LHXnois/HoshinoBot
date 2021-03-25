@@ -13,7 +13,7 @@ from .config import threshold, SAUCENAO_KEY, SEARCH_TIMEOUT, CHAIN_REPLY, DAILY_
 if type(NICKNAME)!=list:
     NICKNAME=[NICKNAME]
 NNICKNAME = ['妈妈', '妈'] + NICKNAME
-sv = Service('picfinder', help_=helptext)
+sv = Service('picfinder', help_=helptext, bundle='setu')
 
 lmtd = DailyNumberLimiter(DAILY_LIMIT)
 logger = log.new_logger('image')
@@ -50,7 +50,7 @@ async def start_finder(bot, ev: CQEvent):
     for i in ev.message:
         if i['type'] == 'image':
             ret.append(i['data']['url'])
-            return
+            break
     #ret = re.match(r"\[CQ:image,file=(.*),url=(.*)\]", str(ev.message))
     if not ret:
         if pls.get_on_off_status(gid):

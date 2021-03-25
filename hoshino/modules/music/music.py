@@ -26,7 +26,7 @@ temp = {}
 last_check = {}
 
 
-@sv.on_prefix(['选', '选择', '选歌'])
+@sv.on_prefix(['选', '选歌'])
 async def choose_song(bot, ev):
     key = f'{ev.group_id}-{ev.user_id}'
     if key not in temp:
@@ -102,7 +102,7 @@ async def to_apply_for_title(bot, ev):
                 )
                 temp[key][str(idx)] = song
             msg.append('=' * 13)
-            msg.append('发送[选择]+序号来听歌吧~')
+            msg.append('发送[选歌]+序号来听歌吧~')
             await bot.send(ev, '\n'.join(msg), at_sender=True)
             last_check[str(ev.group_id)] = datetime.datetime.now()
             last_check[str(ev.user_id)] = datetime.datetime.now()
@@ -138,7 +138,7 @@ async def search_netease_cloud_music(bot, ev):
                 )
                 temp[key][str(idx)] = song
             msg.append('=' * 13)
-            msg.append('发送[选择]+序号来听歌吧~')
+            msg.append('发送[选歌]+序号来听歌吧~')
             await bot.send(ev, '\n'.join(msg), at_sender=True)
             last_check[str(ev.group_id)] = datetime.datetime.now()
             last_check[str(ev.user_id)] = datetime.datetime.now()
@@ -174,7 +174,7 @@ async def search_qq_music(bot, ev):
                 )
                 temp[key][str(idx)] = song
             msg.append('=' * 13)
-            msg.append('发送[选择]+序号来听歌吧~')
+            msg.append('发送[选歌]+序号来听歌吧~')
             await bot.send(ev, '\n'.join(msg), at_sender=True)
             last_check[str(ev.group_id)] = datetime.datetime.now()
             last_check[str(ev.user_id)] = datetime.datetime.now()
@@ -210,7 +210,7 @@ async def search_migu_music(bot, ev):
                 )
                 temp[key][str(idx)] = song
             msg.append('=' * 13)
-            msg.append('发送[选择]+序号来听歌吧~')
+            msg.append('发送[选歌]+序号来听歌吧~')
             await bot.send(ev, '\n'.join(msg), at_sender=True)
             last_check[str(ev.group_id)] = datetime.datetime.now()
             last_check[str(ev.user_id)] = datetime.datetime.now()
