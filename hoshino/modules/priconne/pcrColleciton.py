@@ -48,6 +48,3 @@ class pcrCharas(C.Charasmaster):
     def add_chips(self, chip=100):
         chip = self.c.chip + chip
         self.set_Cvalue('chip', chip)
-
-
-

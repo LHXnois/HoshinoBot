@@ -63,7 +63,7 @@ def dump_pool_config():
 gacha_10_aliases = ('抽十连', '十连', '十连！', '十连抽', '来个十连', '来发十连', '来次十连', '抽个十连', '抽发十连', '抽次十连', '十连扭蛋', '扭蛋十连',
                     '10连', '10连！', '10连抽', '来个10连', '来发10连', '来次10连', '抽个10连', '抽发10连', '抽次10连', '10连扭蛋', '扭蛋10连')
 gacha_1_aliases = ('单抽', '单抽！', '来发单抽', '来个单抽', '来次单抽', '扭蛋单抽', '单抽扭蛋')
-gacha_300_aliases = ('抽一井', '来一井', '来发井', '抽发井', '天井扭蛋', '扭蛋天井')
+gacha_200_aliases = ('抽一井', '来一井', '来发井', '抽发井', '天井扭蛋', '扭蛋天井')
 
 
 @sv.on_fullmatch(('卡池资讯', '查看卡池', '看看卡池', '康康卡池', '看看up', '看看UP'))
@@ -153,7 +153,7 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
                 newinfo.append('\n   ')
             newinfo.append(n)
         msg.append(('NEW: '+' '.join(newinfo)))
-    if gtype == 300:
+    if gtype == 200:
         fup = result['first_up_pos']
         if up and not onlyforup:
             msg.append(f"第{fup}抽首次获得up角色")
@@ -170,7 +170,7 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
             msg.append('Prize Gacha!')
             cardlist = result["card"]
             msg.append(f'{" ".join(cardlist[:5])}\n{" ".join(cardlist[5:])}')
-        elif gtype == 300:
+        elif gtype == 200:
             msg.append('Prize Gacha!')
             for i in range(1, 7):
                 if pget := result[f'p{i}']:
@@ -194,7 +194,7 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
             pcrCoins(uid, '秘石').add_C(nh)
             msg.append(f'获得秘石×{nh}')
 
-    if gtype == 300:
+    if gtype == 200:
         if up == 0 and s3 == 0:
             msg.append("太惨了，主さま咱们还是退款删游吧...")
         elif up == 0 and s3 > 7:
@@ -204,13 +204,13 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
         elif up == 0:
             msg.append("据说天井的概率只有12.16%")
         elif up <= 2:
-            if result['first_up_pos'] < 50:
+            if result['first_up_pos'] < 40:
                 msg.append("你的喜悦我收到了，滚去喂鲨鱼吧！")
-            elif result['first_up_pos'] < 100:
+            elif result['first_up_pos'] < 80:
                 msg.append("已经可以了，主さま已经很欧了")
-            elif result['first_up_pos'] > 290:
+            elif result['first_up_pos'] > 190:
                 msg.append("标 准 结 局")
-            elif result['first_up_pos'] > 250:
+            elif result['first_up_pos'] > 150:
                 msg.append("补井还是不补井，这是一个问题...")
             else:
                 msg.append("期望之内，亚洲水平")
@@ -223,7 +223,7 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
     img = concat_pic([res, msg], t=0 if gtype != 10 else 255)
     img = pic2b64(img)
     img = MessageSegment.image(img)
-    if gtype == 300:
+    if gtype == 200:
         silence_time = (2*up + s3*(1+0.5*int(bool(ne))))*silenunit
     elif gtype == 10:
         SUPER_LUCKY_LINE = 4
@@ -309,10 +309,10 @@ async def gacha_10(bot, ev: CQEvent):
         await silence(ev, silence_time, skip_su=False)
 
 
-@sv.on_prefix(gacha_300_aliases, only_to_me=True)
-async def gacha_300(bot, ev: CQEvent):
+@sv.on_prefix(gacha_200_aliases, only_to_me=True)
+async def gacha_200(bot, ev: CQEvent):
 
-    await check_all(bot, ev, 45000, 0.03)
+    await check_all(bot, ev, 30000, 0.03)
 
     gid = str(ev.group_id)
     uid = ev.user_id
@@ -334,7 +334,7 @@ async def gacha_300(bot, ev: CQEvent):
                 star_slot_verbose=False, gacha=True, t=0))
         res = concat_pic(pics, border=-8, t=0)
 
-    img, silence_time = get_gachares_info(uid, result, 300, res)
+    img, silence_time = get_gachares_info(uid, result, 200, res)
     await bot.send(ev, f'\n素敵な仲間が増えますよ！\n{img}', at_sender=True)
     if silence_time:
         await silence(ev, silence_time, skip_su=False)
@@ -371,7 +371,7 @@ async def allin(bot, ev: CQEvent):
         aimup = 0
 
     await bot.send(ev, '正在抽干家底...')
-    num = min(pcrCoins(uid, '宝石').cnum // 150, 300)
+    num = min(pcrCoins(uid, '宝石').cnum // 150, 200)
     result = gacha.gacha_tenjou(num, True, aimup)
     gachatimes = min(num, result["first_up_pos"])
     pcrCoins(uid, '宝石').red_C(gachatimes*150)
@@ -391,7 +391,7 @@ async def allin(bot, ev: CQEvent):
         res = concat_pic(pics, border=-8, t=0)
 
     img, silence_time = get_gachares_info(
-        uid, result, 300, res, onlyforup=True)
+        uid, result, 200, res, onlyforup=True)
 
     await bot.send(ev, f'\n素敵な仲間が増えますよ！\n{img}', at_sender=True)
     if silence_time:

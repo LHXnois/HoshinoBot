@@ -132,7 +132,7 @@ class Gacha(object):
             getc = chara.fromname(random.choice(self.star1), 1)
         self.result[f's{getc.star}'] += 1
         pC = pcrCharas(self.uid, getc.id)
-        if not pC.check_Cexist:
+        if not pC.check_Cexist and not chara.is_npc(getc.id):
             pC.add_C(getc.star)
             getc.new = True
             self.result['new'].append(getc.name)
@@ -183,7 +183,7 @@ class Gacha(object):
 
         return self.result
 
-    def gacha_tenjou(self, num=300, only_for_up=False, aimup=0):
+    def gacha_tenjou(self, num=200, only_for_up=False, aimup=0):
         first_up_pos = num
         up = self.up_prob
         s3 = self.s3_prob

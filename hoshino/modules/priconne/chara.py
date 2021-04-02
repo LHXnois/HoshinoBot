@@ -102,7 +102,7 @@ def is_npc(id_):
     if id_ in UnavailableChara:
         return True
     else:
-        return not ((1000 < id_ < 1200) or (1700 < id_ < 1900))
+        return not ((1000 < id_ < 1200) or (1700 < id_ < 1900)) or id_ in (1069, 1067)
 
 def gen_team_pic(team, size=64, offsetx=0, sizey=None, star_slot_verbose=True, gacha=False, t=255):
     num = len(team)
@@ -206,7 +206,7 @@ class Chara:
     def gachaicon(self):
         img = Image.new('RGBA', (84, 84), (255, 255, 255, 0))
         icon = self.render_icon(128, gacha=True)
-        if self.star > 2:
+        if self.star > 0:
             icon.paste(gadget_rare_s, mask=gadget_rare_s.split()[3])
         else:
             icon.paste(gadget_rare_n, mask=gadget_rare_n.split()[3])
@@ -214,8 +214,8 @@ class Chara:
         icon = Image.merge("RGBA", (a, b, c, gadget_rare_m.split()[3]))
         icon = icon.resize((64, 64), Image.ANTIALIAS)
         img.paste(icon, (8, 8), mask=icon.split()[3])
-        if self.new:
-            img.paste(gadget_new, mask=gadget_new.split()[3])
+        #if self.new:
+        img.paste(gadget_new, mask=gadget_new.split()[3])
         return img
 
 
