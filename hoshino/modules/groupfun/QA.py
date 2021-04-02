@@ -185,7 +185,7 @@ async def addUQA(bot, ev: CQEvent):
 
 @sv.on_prefix(('有人问', '大家问'))
 async def addGQA(bot, ev: CQEvent):
-    if priv.check_priv(ev, priv.ADMIN):
+    if not priv.check_priv(ev, priv.ADMIN):
         await bot.finish(ev, '管理员才能使用有人问哦')
     gid = ev.group_id
     cacheinit(gid, ev.user_id)
