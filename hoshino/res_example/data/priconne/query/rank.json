@@ -1,0 +1,44 @@
+{
+  "source": {
+    "cn": {
+      "name": "席巴鸽",
+      "channel": "stable",
+      "route": "cn\/xbg"
+    },
+    "tw": {
+      "name": "漪梦奈特",
+      "channel": "stable",
+      "route": "tw\/ymnt"
+    },
+    "jp": {
+      "name": "森佬",
+      "channel": "stable",
+      "route": "jp\/sl"
+    }
+  },
+  "cache": {
+    "cn": {
+      "notice": "表格仅供参考\n※不定期搬运自B站专栏\n※制作by席巴鸽\nR12-4 rank表：",
+      "files": [
+        "12-4_1.png",
+        "12-4_2.png"
+      ]
+    },
+    "tw": {
+      "notice": "表格仅供参考\n※不定期搬运自Youtube\n※制作by漪夢奈特\nR19-3 rank表：",
+      "files": [
+        "19-3_1.png",
+        "19-3_2.png",
+        "19-3_3.png"
+      ]
+    },
+    "jp": {
+      "notice": "表格仅供参考\n※不定期搬运自图中Q群\n※广告为原作者推广，与本bot无关\nR20-3 rank表：",
+      "files": [
+        "20-3_1_fix1.png",
+        "20-3_2_fix1.png",
+        "20-3_3_fix1.png"
+      ]
+    }
+  }
+}
