@@ -12,11 +12,11 @@ _nlmt = DailyNumberLimiter(_max)
 _flmt = FreqLimiter(5)
 
 sv = Service('findold', manage_priv=priv.SUPERUSER,
-             enable_on_default=True, help_='''
+             enable_on_default=True, help_='''考 古 发 现
 取自一位一般互联网用户的qq图片文件夹）
 涩图:沙雕图:表情包=8:1:1
 [#考古] 从历史中扒拉一张图
-ps：加数字可一次取多张，最多5 如#考古5''')
+ps：加数字可一次取多张，最多5 如#考古5''', bundle='setu')
 setu_folder = R.img('setu/').path
 
 

@@ -29,6 +29,7 @@ TOP_MANUAL = '''
 [#helppcr订阅]
 [#helpfun]
 [#helpmaster]
+[#helpsetu]
 [#help通用]
 ========
 ※除这里中写明外 另有其他隐藏功能:)

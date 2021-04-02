@@ -8,8 +8,7 @@ from nonebot import scheduler
 
 import hoshino
 
-HELP_MSG = '''
-来 份 涩 图 ！
+HELP_MSG = '''来 份 涩 图 ！
 来 [num] 张 [keyword] 涩/色/瑟图 : 来num张keyword的涩图(不指定数量与关键字发送一张随机涩图)
 涩/色/瑟图 : 发送一张随机涩图
 提取图片pid ： 获取指定id的p站图片，没有时发送链接
