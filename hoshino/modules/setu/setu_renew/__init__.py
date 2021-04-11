@@ -121,7 +121,7 @@ def check_lmt(uid, num, gid):
     return 0, ''
 
 
-@sv.on_prefix('setu')
+@sv.on_prefix('susetu')
 async def send_setu(bot, ev):
     uid = ev['user_id']
     gid = ev['group_id']
@@ -130,9 +130,9 @@ async def send_setu(bot, ev):
 
     msg = ''
     if not is_su:
-        msg = '需要超级用户权限\n发送"帮助 pcr娱乐"获取操作指令'
+        msg = '需要超级用户权限\n发送"#helpsetu"获取操作指令'
     elif len(args) == 0:
-        msg = '无效参数\n发送"帮助 pcr娱乐"获取操作指令'
+        msg = '无效参数\n发送"#helpsetu"获取操作指令'
     elif args[0] == '设置' and len(args) >= 3:  # setu set module on [group]
         if len(args) >= 4 and args[3].isdigit():
             gid = int(args[3])
@@ -212,7 +212,8 @@ async def send_setu(bot, ev):
     await bot.send(ev, msg)
 
 
-@sv.on_rex(r'^[色涩瑟][图圖]|[来來发發给給]((?P<num>\d+)|(?:.*))[张張个個幅点點份丶](?P<keyword>.*?)[色涩瑟][图圖]$')
+@sv.on_rex(r'^(([色涩瑟]图)|setu)(?P<r18>r18)?( ?(?P<keyword>[^ ]+))?( (?P<num>\d+))?$', only_to_me=True)
+@sv.on_rex(r'^[来发给]((?P<num>\d+)|(?:.*))[张个幅点份丶](?P<keyword>.*?)[色涩瑟]图(?P<r18>r18)?$', only_to_me=True)
 async def send_search_setu(bot, ev):
     uid = ev['user_id']
     gid = ev['group_id']
@@ -345,7 +346,7 @@ async def send_ranking_setu(bot, ev):
             await asyncio.sleep(1)
 
 
-@sv.on_prefix('提取图片')
+@sv.on_prefix('pid')
 async def get_spec_setu(bot, ev):
     args = ev.message.extract_plain_text().split()
     try:

@@ -106,6 +106,10 @@ class ResData(ResObj):
 
     def write(self, content):
         if self.Type == 'json':
+            if not self.exist:
+                dirpath = os.path.split(self.path)[0]
+                if not os.path.exists(dirpath):
+                    os.makedirs(dirpath, exist_ok=True)
             util.save_jsons(content, self.path)
         else:
             hoshino.logger.error(f'未定义该类型数据处理方式：{self.Type}')

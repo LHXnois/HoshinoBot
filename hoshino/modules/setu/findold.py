@@ -17,28 +17,31 @@ sv = Service('findold', manage_priv=priv.SUPERUSER,
 涩图:沙雕图:表情包=8:1:1
 [#考古] 从历史中扒拉一张图
 ps：加数字可一次取多张，最多5 如#考古5''', bundle='setu')
-setu_folder = R.img('setu/').path
+oldsetu_folder = R.img('setu/oldimgs/').path
+DEEPTH_NOT_EXIT = 404
 
-
-def setu_gener(folder=''):
-    while True:
-        filelist = os.listdir(os.path.join(setu_folder, folder))
+def oldsetu_gener(deepth=0):
+    dirpath = os.path.join(oldsetu_folder, str(deepth))
+    if not os.path.exists(dirpath):
+        return DEEPTH_NOT_EXIT
+    data = R.data(f'setu/oldimgs/{deepth}.json', 'json')
+    if not data.exist or data.read is None:
+        filelist = os.listdir(dirpath)
+        if filelist is None:
+            return DEEPTH_NOT_EXIT
         random.shuffle(filelist)
-        for filename in filelist:
-            if os.path.isfile(os.path.join(setu_folder, folder, filename)):
-                yield R.img(f'setu/{folder}', filename)
+    else:
+        filelist = data.read
+    filename = filelist.pop()
+    data.write(filelist)
+    return R.img(dirpath, filename)
 
 
 # defaultsetu_gener = setu_gener()
-old_gener = setu_gener('oldimgs')
 
 
 ''' def get_setu():
     return defaultsetu_gener.__next__() '''
-
-
-def find_old():
-    return old_gener.__next__()
 
 
 ''' #@sv.on_rex(r'不够[涩瑟色]|[涩瑟色]图|来一?[点份张].*[涩瑟色]|再来[点份张]|看过了|铜')
@@ -73,15 +76,27 @@ async def find_olds(bot, ev):
         await bot.send(ev, '您冲得太快了，请稍候再冲', at_sender=True)
         return
     _flmt.start_cd(uid)
-    kw = ev.message.extract_plain_text().strip()
-    try:
-        count = min(int(kw), 5)
-        if count <= 0:
+    kw = ev.message.extract_plain_text().strip().split('/')
+    count = 1
+    deepth = 0
+    if len(kw) > 0 and kw[0]:
+        try:
+            count = min(int(kw[0].strip()), 5)
+            if count <= 0:
+                count = 1
+        except Exception:
             count = 1
-    except Exception:
-        count = 1
+    if len(kw) > 1 and kw[1]:
+        try:
+            deepth = min(int(kw[1].strip()), 1)
+            if deepth <= 0:
+                deepth = 0
+        except Exception:
+            deepth = 0
     # conditions all ok, send a setu.
-    pic = [find_old() for _ in range(count)]
+    pic = [oldsetu_gener(deepth) for _ in range(count)]
+    if DEEPTH_NOT_EXIT in pic:
+        await bot.finish(ev, '该深度下没有图片！')
     pic = [i.cqcode for i in pic]
     pic = sum(pic)
     try:
