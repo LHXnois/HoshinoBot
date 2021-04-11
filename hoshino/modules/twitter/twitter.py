@@ -36,11 +36,11 @@ subr_dic['illust'] = {
             enable_on_default=False, visible=False): ['shiratamacaron', 'k_yuizaki', 'suzukitoto0323'],
     Service('lhx-favorite-twitter', manage_priv=priv.SUPERUSER,
             enable_on_default=False,
-            visible=False): ['shiratamacaron', 'k_yuizaki', 'suzukitoto0323',
+            visible=False): [#  'shiratamacaron', 'k_yuizaki', 'suzukitoto0323',
                              'tsukimi08', 'blade4649', 'itiri', 'MauveSR',
                              'hoshi_u3', 'gurasion0310', 'amsrntk3',
                              'nejikirio', 'siragagaga', 'kedamaa',
-                             'chatsune21'],
+                             'chatsune21', '_himehajime'],
 }
 
 latest_info = {}
