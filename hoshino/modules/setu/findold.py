@@ -10,32 +10,58 @@ _max = 5
 EXCEED_NOTICE = f'您今天已经冲过{_max}次了，请明早5点后再来！'
 _nlmt = DailyNumberLimiter(_max)
 _flmt = FreqLimiter(5)
-
+oldsetu_folder = R.img('setu/oldimgs/').path
+maxdeep=len(os.listdir(oldsetu_folder))
 sv = Service('findold', manage_priv=priv.SUPERUSER,
-             enable_on_default=True, help_='''考 古 发 现
+             enable_on_default=True, help_=f'''考 古 发 现
 取自一位一般互联网用户的qq图片文件夹）
 涩图:沙雕图:表情包=8:1:1
 [#考古] 从历史中扒拉一张图
-ps：加数字可一次取多张，最多5 如#考古5''', bundle='setu')
-oldsetu_folder = R.img('setu/oldimgs/').path
-DEEPTH_NOT_EXIT = 404
+ps：加数字可一次取多张，最多5 如#考古5
+pps：斜杠加数字可指定深度，越大越久远，默认0 如#考古/1
+ppps: 目前最大深度 {maxdeep-1}''', bundle='setu')
 
-def oldsetu_gener(deepth=0):
-    dirpath = os.path.join(oldsetu_folder, str(deepth))
+DEEPTH_NOT_EXIT = 404
+DEEPTH_CLEAR = 200
+def oldsetu_gener(deepth=0, num=1):
+    locate = maxdeep - deepth
+    dirpath = os.path.join(oldsetu_folder, str(locate))
     if not os.path.exists(dirpath):
         return DEEPTH_NOT_EXIT
-    data = R.data(f'setu/oldimgs/{deepth}.json', 'json')
-    if not data.exist or data.read is None:
+    data = R.data(f'setu/oldimgs/{locate}.json', 'json')
+    if not data.exist or data.read['left'] == 0:
         filelist = os.listdir(dirpath)
-        if filelist is None:
+        maxnum = len(filelist)
+        if not maxnum:
             return DEEPTH_NOT_EXIT
         random.shuffle(filelist)
+        filedata = {
+            'left': maxnum,
+            'maxnum': maxnum,
+            'data': filelist
+        }
     else:
-        filelist = data.read
-    filename = filelist.pop()
-    data.write(filelist)
-    return R.img(dirpath, filename)
+        filedata = data.read
+    num = min(num, filedata['left'])
+    pic = [R.img(dirpath, filedata['data'].pop()) for _ in range(num)]
+    filedata['left'] -= num
+    data.write(filedata)
+    return (pic, filedata['left'], filedata['maxnum'])
 
+
+infodata = {
+    1: '? ~ 19.3',
+    2: '19.3 ~ 19.5',
+    3: '19.5 ~ 19.6',
+    4: '19.6 ~ 19.8',
+    5: '19.8 ~ 19.10',
+    6: '19.10 ~ 19.10',
+    7: '19.10 ~ 20.5',
+    8: '20.5 ~ 20.8',
+    9: '20.8 ~ 20.10',
+    10: '20.10 ~ 21.1',
+    11: '21.1 ~ 21.3'
+}
 
 # defaultsetu_gener = setu_gener()
 
@@ -88,19 +114,21 @@ async def find_olds(bot, ev):
             count = 1
     if len(kw) > 1 and kw[1]:
         try:
-            deepth = min(int(kw[1].strip()), 1)
+            deepth = min(int(kw[1].strip()), maxdeep-1)
             if deepth <= 0:
                 deepth = 0
         except Exception:
             deepth = 0
     # conditions all ok, send a setu.
-    pic = [oldsetu_gener(deepth) for _ in range(count)]
-    if DEEPTH_NOT_EXIT in pic:
+    pic = oldsetu_gener(deepth, count)
+    if pic is DEEPTH_NOT_EXIT:
         await bot.finish(ev, '该深度下没有图片！')
-    pic = [i.cqcode for i in pic]
+    left = pic[1]
+    pic = [i.cqcode for i in pic[0]]
     pic = sum(pic)
     try:
-        await bot.send(ev, pic)
+        info = f'深度{deepth}\n时期: {infodata[maxdeep-deepth]}'
+        await bot.send(ev, f'{info}\n剩余图片{left}\n{pic}')
     except CQHttpError:
         sv.logger.error(f"发送图片{pic}失败")
         try:
