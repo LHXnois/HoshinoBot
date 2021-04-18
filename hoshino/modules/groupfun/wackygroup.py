@@ -28,6 +28,7 @@ Lw = SubService('longwang', sv, help_='''迫害龙王！
 Nbnhhsh = SubService('nbnhhsh', sv, help_='''能不能好好说话！
 [#??] 后跟翻译缩写
 eg:#??pcr''')
+Speak = SubService('speakthis', sv, help_='''[#说xxx] 调用tx朗读接口读xxx''')
 Tail = SubService('gentail', sv, help_='''群名片小尾巴！
 [#我要小尾巴] 后跟想要的小尾巴''')
 Wyy = SubService('wyysentence', sv, help_='''到点了，上号！
@@ -131,6 +132,13 @@ async def chat_jinnianshengyu(bot, ev: CQEvent):
     for i in range(10-shengyu):
         msg += '◻'
     await bot.send(ev, msg)
+
+
+@Speak.on_prefix('说', only_to_me=True)
+async def speakthis(bot, ev: CQEvent):
+    kw = ev.message.extract_plain_text().strip()
+    if kw:
+        await bot.send(ev, f'[CQ:tts,text={kw}]')
 
 
 @Tail.on_prefix('我要小尾巴', only_to_me=True)
