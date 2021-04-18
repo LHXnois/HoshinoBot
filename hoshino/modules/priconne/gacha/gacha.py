@@ -183,24 +183,33 @@ class Gacha(object):
 
         return self.result
 
-    def gacha_tenjou(self, num=200, only_for_up=False, aimup=0):
+    def gacha_tenjou(self, num=200, only_for_up=False):
         first_up_pos = num
         up = self.up_prob
         s3 = self.s3_prob
         s2 = self.s2_prob
         s1 = 1000 - s3 - s2
+        if only_for_up:
+            for i in self.up:
+                if not pcrCharas(self.uid, i).check_Cexist:
+                    for_new_up = True
+                    break
+            else:
+                for_new_up = False
+            self.result['getnewup'] = False
         for i in range(num):
             lup = self.result['up']
+            ln = len(self.result['new'])
             is_10 = int((i+1) % 10 == 0)
             self.gacha_one(up, s3, s2+s1*is_10, s1*(1-is_10), True)
             rup = self.result['up']
+            rn = len(self.result['new'])
             if lup == 0 and rup == 1:
                 first_up_pos = i+1
             if lup < rup and only_for_up:
-                aimid = chara.name2id(self.up[aimup])
-                getid = self.result['chara'][-1].id
-                if aimid == getid or self.up[aimup] in self.result['chara']:
-                    self.result['first_up_pos'] = first_up_pos
+                if ln < rn or not for_new_up:
+                    self.result['first_up_pos'] = i+1
+                    self.result['getnewup'] = for_new_up
                     return self.result
         self.result['first_up_pos'] = first_up_pos
         return self.result

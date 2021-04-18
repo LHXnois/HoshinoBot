@@ -19,7 +19,7 @@ group_data = {}
 
 
 calendardata = R.data('priconne/calendar.json', 'json')
-icon = 'http://lolibest.ltd/wp/wp-content/uploads/2021/03/kokkoro_stamp.ico'
+icon = 'https://lolibest.ltd/kokkoro_stamp.ico'
 
 
 def load_data():

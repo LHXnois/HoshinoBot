@@ -335,6 +335,9 @@ async def chat_wtmauto(bot, ctx):
     if random.random() < 0.05:
         await bot.send(ctx, R.img(
             'groupfun/chat', 'geng/wtmzjauto.jpg').cqcode)
+    elif random.random() < 0.06:
+        await bot.send(ctx, R.img(
+            'groupfun/chat', 'geng/autotime.jpg').cqcode)
 
 
 @sv.on_keyword(('毒池'))

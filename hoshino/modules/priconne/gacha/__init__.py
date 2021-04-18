@@ -66,10 +66,11 @@ gacha_1_aliases = ('单抽', '单抽！', '来发单抽', '来个单抽', '来�
 gacha_200_aliases = ('抽一井', '来一井', '来发井', '抽发井', '天井扭蛋', '扭蛋天井')
 
 
-@sv.on_fullmatch(('卡池资讯', '查看卡池', '看看卡池', '康康卡池', '看看up', '看看UP'))
+@sv.on_prefix(('卡池资讯', '查看卡池', '看看卡池', '康康卡池', '看看up', '看看UP'))
 async def gacha_info(bot, ev: CQEvent):
+    pool = await set_my_pool(bot, ev)
     gid = str(ev.group_id)
-    gacha = Gacha(ev.user_id, _group_pool[gid])
+    gacha = Gacha(ev.user_id, pool)#_group_pool[gid])
     up_chara = gacha.up
     up_chara = map(lambda x: str(chara.fromname(
         x, star=3).icon.cqcode) + x, up_chara)
@@ -104,6 +105,26 @@ async def set_pool(bot, ev: CQEvent):
     dump_pool_config()
     await bot.send(ev, f'卡池已切换为{name}池', at_sender=True)
     await gacha_info(bot, ev)
+
+
+async def set_my_pool(bot, ev):
+    name = util.normalize_str(ev.message.extract_plain_text())
+    if not name:
+        gid = str(ev.group_id)
+        return _group_pool[gid]
+    elif name in ('国', '国服', 'cn'):
+        await bot.finish(ev, '请选择以下卡池\n> 选择卡池 b服\n> 选择卡池 台服')
+    elif name in ('b', 'b服', 'bl', 'bilibili'):
+        name = 'BL'
+    elif name in ('台', '台服', 'tw', 'sonet'):
+        name = 'TW'
+    elif name in ('日', '日服', 'jp', 'cy', 'cygames'):
+        name = 'JP'
+    elif name in ('混', '混合', 'mix'):
+        name = 'MIX'
+    else:
+        await bot.finish(ev, f'未知服务器地区 {POOL_NAME_TIP}', at_sender=True)
+    return name
 
 
 async def check_jewel_num(bot, ev: CQEvent, num):
@@ -158,8 +179,9 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
         if up and not onlyforup:
             msg.append(f"第{fup}抽首次获得up角色")
         if onlyforup:
-            if up:
-                msg.append(f'抽到了！好耶！\n第{fup}抽到up角色！，花费{fup*150}宝石')
+            if 'getnewup' in result:
+                ifnew = '新' if result['getnewup'] else ''
+                msg.append(f'抽到了！好耶！\n第{fup}抽到{ifnew}up角色！，花费{fup*150}宝石')
             else:
                 msg.append(f"沉船了...呜呜呜...\n抽了{fup}发，花费{fup*150}宝石")
     if result['prize']:
@@ -260,10 +282,10 @@ async def check_all(bot, ev: CQEvent, num, p, free=False):
 async def gacha_1(bot, ev: CQEvent):
 
     await check_all(bot, ev, 150, 0.01)
-
+    pool = await set_my_pool(bot, ev)
     gid = str(ev.group_id)
     uid = ev.user_id
-    gacha = Gacha(uid, _group_pool[gid])
+    gacha = Gacha(uid, pool)
     result = gacha.gacha_one(gacha.up_prob, gacha.s3_prob,
                              gacha.s2_prob, recordcard=True)
 
@@ -280,11 +302,12 @@ async def gacha_1(bot, ev: CQEvent):
 async def gacha_10(bot, ev: CQEvent):
 
     free = await check_all(bot, ev, 1500, 0.02, True)
+    pool = await set_my_pool(bot, ev)
 
     await bot.send(ev, '少女祈祷中...')
     gid = str(ev.group_id)
     uid = ev.user_id
-    gacha = Gacha(uid, _group_pool[gid])
+    gacha = Gacha(uid, pool)#_group_pool[gid])
     resultdic = gacha.gacha_ten()
     result = resultdic['chara']
 
@@ -313,10 +336,11 @@ async def gacha_10(bot, ev: CQEvent):
 async def gacha_200(bot, ev: CQEvent):
 
     await check_all(bot, ev, 30000, 0.03)
+    pool = await set_my_pool(bot, ev)
 
     gid = str(ev.group_id)
     uid = ev.user_id
-    gacha = Gacha(uid, _group_pool[gid])
+    gacha = Gacha(uid, pool)#_group_pool[gid])
     await bot.send(ev, '少女祈祷中...')
     result = gacha.gacha_tenjou()
     res = result['chara']
@@ -347,32 +371,13 @@ async def allin(bot, ev: CQEvent):
 
     await check_jewel_num(bot, ev, 150)
     await check_if_fail(bot, ev, 0.03)
+    pool = await set_my_pool(bot, ev)
 
-    gacha = Gacha(uid, _group_pool[gid])
-
-    kw = ev.message.extract_plain_text().strip()
-    if len(gacha.up) > 1 and kw != '':
-        mappp = {'1': 0, '2': 1}
-        if kw in mappp and (mappp[kw]+1) <= len(gacha.up):
-            aimup = mappp[kw]
-        else:
-            wantid = chara.name2id(kw)
-            mappp[wantid] = None
-            t = 0
-            for i in gacha.up:
-                mappp[chara.name2id(i)] = t
-                t += 1
-            if mappp[wantid] is not None:
-                aimup = mappp[wantid]
-            else:
-                comlist = ['#抽干家底' + i for i in gacha.up]
-                await bot.finish(ev, '不加参数默认追一号位up，若要指定请在指令后加参数:\n'+'\n'.join(comlist))
-    else:
-        aimup = 0
+    gacha = Gacha(uid, pool)#_group_pool[gid])
 
     await bot.send(ev, '正在抽干家底...')
     num = min(pcrCoins(uid, '宝石').cnum // 150, 200)
-    result = gacha.gacha_tenjou(num, True, aimup)
+    result = gacha.gacha_tenjou(num, True)
     gachatimes = min(num, result["first_up_pos"])
     pcrCoins(uid, '宝石').red_C(gachatimes*150)
     res = result['chara']

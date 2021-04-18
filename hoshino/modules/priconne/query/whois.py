@@ -6,8 +6,8 @@ from . import sv
 
 lmt = FreqLimiter(5)
 
-@sv.on_suffix('是谁')
-@sv.on_prefix('谁是')
+@sv.on_suffix('是谁', only_to_me=True)
+@sv.on_prefix('谁是', only_to_me=True)
 async def whois(bot, ev: CQEvent):
     name = escape(ev.message.extract_plain_text().strip())
     if not name:

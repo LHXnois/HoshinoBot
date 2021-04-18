@@ -130,7 +130,7 @@ async def _repeater(bot, ev, if_daduan=0):
 NOTAOWA_WORD = (
     'bili', 'Bili', 'BILI', '哔哩', '啤梨', 'mu', 'pili', 'dili',
     '是不', '批里', 'nico', '滴哩', 'BiLi', '不会吧', '20', '哼，', '哼,',
-    ',000'
+    ',000', '多娜'
 )
 
 lasttaowa = {}

@@ -157,7 +157,7 @@ class Coinsmaster(Cmaster):
     db = Coins
     '''
     #货币系统\n
-    from hoshino.unit import Coinsmaster\n
+    from hoshino.C import Coinsmaster\n
     这是触发示例\n
     Cm = Coinsmaster(uid:用户id, coinname:货币名称) #货币名称默认为Coin\n
     num = Cm.cnum 获取货币数量\n
