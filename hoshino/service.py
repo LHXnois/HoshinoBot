@@ -392,6 +392,41 @@ class Service:
             return nonebot.on_notice(*events)(wrapper)
         return deco
 
+    def on_replay(self, startwith: str = '') -> Callable:
+        def deco(func) -> Callable:
+            @wraps(func)
+            async def wrapper(ctx):
+                if ctx.message[0]['type'] != 'reply':
+                    return
+                if self._check_all(ctx):
+                    first = 1
+                    if startwith:
+                        while first <= 3:
+                            if ctx.message[first]['type'] != 'text' or ctx.message[first]['data']['text'] == ' ':
+                                first += 1
+                            else:
+                                break
+                        else:
+                            return
+                        fmsg = ctx.message[first]['data']['text'].strip()
+                        if not fmsg.startswith(startwith):
+                            return
+                    ctx['quote_message'] = await self.bot.get_msg(
+                        message_id=ctx.message[0]['data']['id'])
+                    ctx['quote_message']['message'] = Message(
+                        ctx['quote_message']['message'])
+                    ctx['rep_message'] = Message(ctx.message[first:])
+                    if startwith:
+                        fmsg = ctx['rep_message'][0]['data']['text'].strip()
+                        ctx['rep_message'][0]['data']['text'] = fmsg[len(startwith):]
+                    try:
+                        return await func(self.bot, ctx)
+                    except Exception as e:
+                        self.logger.error(f'{type(e)} occured when {func.__name__} handling message {ctx["message_id"]}.')
+                        self.logger.exception(e)
+                    return
+            return self.bot.on_message('group')(wrapper)
+        return deco
 
 sulogger = log.new_logger('sucmd', hoshino.config.DEBUG)
 
