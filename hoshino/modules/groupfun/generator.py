@@ -17,6 +17,7 @@ sv = Service('generator', help_='''
 [我朋友说他好了] 无中生友，无艾特时随机群员
 [#报时] 现在几点了？
 [#rua@目标] 群友搓一搓，生活乐趣多
+[#5k upper lower] 5k梗图生成
 '''.strip(), bundle='fun')
 
 _flmt = FreqLimiter(300)
@@ -41,20 +42,20 @@ def measure(msg, font_size, img_width):
     return '\n'.join(measured_msg)
 
 
-@sv.on_prefix(('营销号'))
+@sv.on_prefix(('营销号'), only_to_me=True)
 async def yxh(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     arr = kw.split('/')
     if not arr[2]:
         return
-    msg = f'    {arr[0]}{arr[1]}是怎么回事呢？{arr[0]}相信大家都很熟悉，但是'\
-        f'{arr[0]}{arr[1]}是怎么回事呢，下面就让可可萝带大家一起了解吧。\n    {arr[0]}{arr[1]}，其实'\
-        f'就是{arr[2]}，大家可能会很惊讶{arr[0]}怎么会{arr[1]}呢？但事实就是这样，可可萝也感到非常惊讶。\n'\
-        f'    这就是关于{arr[0]}{arr[1]}的事情了，大家有什么想法呢，欢迎在群里告诉可可萝一起讨论哦！'
+    msg = (f'    {arr[0]}{arr[1]}是怎么回事呢？{arr[0]}相信大家都很熟悉，但是'
+           f'{arr[0]}{arr[1]}是怎么回事呢，下面就让可可萝带大家一起了解吧。\n    {arr[0]}{arr[1]}，其实'
+           f'就是{arr[2]}，大家可能会很惊讶{arr[0]}怎么会{arr[1]}呢？但事实就是这样，可可萝也感到非常惊讶。\n'
+           f'    这就是关于{arr[0]}{arr[1]}的事情了，大家有什么想法呢，欢迎在群里告诉可可萝一起讨论哦！')
     await bot.send(ev, msg)
 
 
-@sv.on_prefix(('狗屁不通'))
+@sv.on_prefix(('狗屁不通'), only_to_me=True)
 async def gpbt(bot, ev: CQEvent):
     data = R.data('groupfun/generator/gpbt.json', 'json').read
     title = ev.message.extract_plain_text().strip()
@@ -74,7 +75,7 @@ async def gpbt(bot, ev: CQEvent):
     await bot.send(ev, body)
 
 
-@sv.on_prefix(('记仇'))
+@sv.on_prefix(('记仇'), only_to_me=True)
 async def jc(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     arr = kw.split('/')
@@ -103,7 +104,7 @@ async def jc(bot, ev: CQEvent):
 
 
 @sv.on_rex(('^我(有个|一个|有一个)*朋友(想问问|说|让我问问|想问|让我问|想知道|'
-            '让我帮他问问|让我帮他问|让我帮忙问|让我帮忙问问|问)*(?P<kw>.{0,30}$)'), only_to_me=True)
+            '让我帮他问问|让我帮他问|让我帮忙问|让我帮忙问问|问)*(?P<kw>.{0,30}$)'))
 async def friend(bot, ev: CQEvent):
     if ev.user_id not in bot.config.SUPERUSERS:
         # 定义非管理员的冷却时间
@@ -207,3 +208,15 @@ async def showtime(bot, ev):
                      textsize=95, textfill='black', position=(305, 255))
     img.save(outputpic.path)
     await bot.send(ev, outputpic.cqcode, at_sender=False)
+
+
+@sv.on_prefix(('5k','5K'), only_to_me=True)
+async def _5k(bot, ev: CQEvent):
+    kw = ev.message.extract_plain_text().strip().split()
+    if len(kw) == 2:
+        url = f'https://api.dihe.moe/5000choyen/?upper={kw[0]}&&lower={kw[1]}'
+        if url[-1] not in '！）：，》；”。':
+            url += ' '
+        pic = await R.tem_img(
+            'groupfun/generator', '5k.png').download(url, typecheck=False)
+        await bot.send(ev, pic.cqcode)
