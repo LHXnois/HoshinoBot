@@ -101,6 +101,9 @@ class ResData(ResObj):
                 raise ValueError('不是有效文件类型')
         if self.Type == 'json':
             return util.load_jsons(self.path)
+        if self.Type == 'txt':
+            return [line.strip() for line in open(
+                self.path, encoding='UTF-8').readlines()]
         else:
             hoshino.logger.error(f'未定义该类型数据处理方式：{self.Type}')
 
@@ -150,7 +153,7 @@ class TemImg(ResImg):
         else:
             return os.path.join(hoshino.config.RES_DIR, self.__path)
 
-    async def download(self, url: str, use_proxie=False, proxies=Proxies):
+    async def download(self, url: str, use_proxie=False, proxies=Proxies, typecheck=True):
         hoshino.logger.info(f'download_tem_img from {url}')
         if use_proxie:
             resp = await aiorequests.get(url, stream=True, proxies=proxies)
@@ -159,14 +162,18 @@ class TemImg(ResImg):
         hoshino.logger.debug(f'status_code={resp.status_code}')
         if 200 == resp.status_code:
             try:
-                if re.search(r'image', resp.headers['content-type'], re.I):
-                    content = await resp.content
-                    self.addsuffix(content=content)
-                    hoshino.logger.debug(f'is image, saving to {self.path}')
-                    with open(self.path, 'wb') as f:
-                        f.write(content)
-                        hoshino.logger.debug('saved!')
-                        return self
+                if 'content-type' in resp.headers and not re.search(
+                        r'image',
+                        resp.headers['content-type'],
+                        re.I) and typecheck:
+                    return
+                content = await resp.content
+                self.addsuffix(content=content)
+                hoshino.logger.debug(f'is image, saving to {self.path}')
+                with open(self.path, 'wb') as f:
+                    f.write(content)
+                    hoshino.logger.debug('saved!')
+                    return self
             except Exception as e:
                 hoshino.logger.exception(e)
 
