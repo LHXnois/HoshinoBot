@@ -133,6 +133,27 @@ class Gm:
             hoshino.logger.exception(e)
             return {}
 
+    # 获取陌生人信息
+    @classmethod
+    async def user_info(self, user_id: int, key: str = None) -> dict:
+        '''info 内容
+            user_id	int64	QQ 号
+            nickname	string	昵称
+            sex	string	性别, male 或 female 或 unknown
+            age	int32	年龄
+            qid	string	qid ID身份卡
+        '''
+        try:
+            info = await self.bot.get_stranger_info(
+                user_id=user_id
+            )
+            if key:
+                return info[key]
+            return info
+        except Exception as e:
+            hoshino.logger.exception(e)
+            return {}
+
     async def rolecheck(self, roleneed: str):
         await self.roleupdate()
         if self.role == 'owner':
@@ -310,7 +331,7 @@ class Gm:
 
 
     @classmethod
-    def check_command(self, msg) -> str:
+    def check_command(self, msg, notkeyword=False) -> str:
         if type(msg) is str:
             message = Message(msg)
             rmessage = msg
@@ -332,7 +353,8 @@ class Gm:
         event = CQEvent().from_payload(ev)
         event['to_me'] = False
         _check_calling_me_nickname(self.bot, event)
-        for t in trigger.chain:
+        maxx = 4 if notkeyword else 5
+        for t in trigger.chain[:maxx]:
             if sf := t.find_handler(event):
                 if sf.only_to_me and not event['to_me']:
                     continue
