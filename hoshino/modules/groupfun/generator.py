@@ -103,15 +103,14 @@ async def jc(bot, ev: CQEvent):
     await bot.send(ev, str(MessageSegment.image(pic2b64(image_back))))
 
 
-@sv.on_rex(('^我(有个|一个|有一个)*朋友(想问问|说|让我问问|想问|让我问|想知道|'
-            '让我帮他问问|让我帮他问|让我帮忙问|让我帮忙问问|问)*(?P<kw>.{0,30}$)'))
+@sv.on_rex(('^我(有个|一个|有一个)*朋友(想问问|说|让我问问|想问|让我问|想知道|让我帮他问问|让我帮他问|让我帮忙问|让我帮忙问问|问)*(?P<kw>.{0,30}$)'))
 async def friend(bot, ev: CQEvent):
     if ev.user_id not in bot.config.SUPERUSERS:
         # 定义非管理员的冷却时间
         if not _flmt.check(ev.user_id):
             return
         _flmt.start_cd(ev.user_id)
-    data = R.data('groupfun/generator/config.json', 'json').read
+    #data = R.data('groupfun/generator/config.json', 'json').read
     arr = []
     is_at = False
     for m in ev.message:
@@ -119,10 +118,10 @@ async def friend(bot, ev: CQEvent):
             arr = [int(m.data['qq'])]
             is_at = True
     if not is_at:
-        try:
+        """ try:
             arr = data[f'{ev.group_id}']
-        except Exception:
-            arr = await Gm(ev).member_list()
+        except Exception: """
+        arr = await Gm(ev).member_list()
     match = ev['match']
     msg = match.group('kw')
     msg = msg.replace('他', '我').replace('她', '我')

@@ -119,7 +119,7 @@ async def picmessage(bot, ev: CQEvent):
         msg = await checker(i, ev.message_id)
         await bot.send(ev, msg)
 
-@sv.on_replay(startwith='打分')
+#@sv.on_replay(startwith='打分')
 async def testrep(bot, ev: CQEvent):
     kw = ev['rep_message'].extract_plain_text().strip().split()
     ind = 0

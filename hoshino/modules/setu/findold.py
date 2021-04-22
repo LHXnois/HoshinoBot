@@ -1,11 +1,12 @@
 import os
 import random
+from aiocqhttp import CQHttp
 
 from nonebot.exceptions import CQHttpError
 
 from hoshino import R, Service, priv
-from hoshino.util import FreqLimiter, DailyNumberLimiter
-
+from hoshino.util import FreqLimiter, DailyNumberLimiter, chain_replay, genchain
+from hoshino.typing import CQEvent
 _max = 5
 EXCEED_NOTICE = f'您今天已经冲过{_max}次了，请明早5点后再来！'
 _nlmt = DailyNumberLimiter(_max)
@@ -94,8 +95,8 @@ async def setu(bot, ev):
         except Exception:
             pass '''
 
-@sv.on_prefix('考古')
-async def find_olds(bot, ev):
+@sv.on_prefix('考古', only_to_me=True)
+async def find_olds(bot, ev: CQEvent):
     """随机叫一份涩图，对每个用户有冷却时间"""
     uid = ev['user_id']
     if not _flmt.check(uid):
@@ -125,13 +126,27 @@ async def find_olds(bot, ev):
         await bot.finish(ev, '该深度下没有图片！')
     left = pic[1]
     pic = [i.cqcode for i in pic[0]]
-    pic = sum(pic)
+    picm = sum(pic)
     try:
-        info = f'深度{deepth}\n时期: {infodata[maxdeep-deepth]}'
-        await bot.send(ev, f'{info}\n剩余图片{left}\n{pic}')
+        info = f'深度{deepth}\n时期: {infodata[maxdeep-deepth]}\n剩余图片{left}'
+        await bot.send(ev, f'{info}\n{picm}')
     except CQHttpError:
-        sv.logger.error(f"发送图片{pic}失败")
+        sv.logger.error(f"发送图片{picm}失败")
         try:
-            await bot.send(ev, '涩图太涩，发不出去勒...')
-        except Exception:
-            pass
+            msg = [genchain(info)]
+            username = ev.sender['card'] or ev.sender['nickname']
+            for i in pic:
+                name = random.choice([username, '色批'])
+                msg.append(genchain(i, name, ev.user_id))
+            await chain_replay(bot, ev, msg)
+        except CQHttpError:
+            await bot.send(ev, info)
+            for i, p in enumerate(pic):
+                try:
+                    await bot.send(ev, p)
+                except CQHttpError:
+                    await bot.send(ev, f'{i+1}号涩图太涩，发不出去勒...')
+                    await bot.send_private_msg(
+                        user_id=uid,
+                        group_id=ev.group_id,
+                        message=p)

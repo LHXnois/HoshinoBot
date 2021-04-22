@@ -239,11 +239,7 @@ async def chat_cao(bot, ev):
         await bot.send(ev, R.img(
             'groupfun/chat', f'taowa/cao{random.randint(1, 2)}.jpg').cqcode)
     elif rtest < 0.3:
-        await bot.send(ev, '草')
-    elif rtest < 0.4:
-        await bot.send(ev, '不许草')
-    elif rtest < 0.5:
-        await bot.send(ev, '草野优衣')
+        await bot.send(ev, random.choice(('草', '不许草', '草野优衣', '一种植物')))
 
 
 @sv.on_fullmatch(('就这', '就这？', '就这?', '九折', '九折？', '九折?'))
@@ -253,8 +249,6 @@ async def chat_jiuzhe(bot, ev):
         await bot.send(ev, R.img('groupfun/chat', 'taowa/jiuzhe.jpg').cqcode)
     elif rtest < 0.3:
         await bot.send(ev, '就这')
-    elif rtest < 0.35:
-        await bot.send(ev, '你来')
 
 
 @sv.on_fullmatch(('?', '？', '¿'))
@@ -270,6 +264,8 @@ async def chat_wenhao(bot, ev):
         await bot.send(ev, '¿ ')
     elif rtest < 0.3:
         await bot.send(ev, R.img('groupfun/chat', 'maimeng/wenhao.jpg').cqcode)
+    elif rtest < 0.35:
+        await bot.send(ev, R.img('groupfun/chat', 'maimeng/wenhao.png').cqcode)
 
 
 # =====================keyword======================= #
@@ -413,6 +409,13 @@ async def chat_guashu(bot, ctx):
     if random.random() < 0.05:
         await bot.send(ctx, R.img(
             'groupfun/chat', f'geng/guashu{random.randint(1, 2)}.jpg').cqcode)
+
+
+@sv.on_keyword(('马娘', '🐎娘'))
+async def chat_maniang(bot, ctx):
+    if random.random() < 0.05:
+        await bot.send(ctx, R.img(
+            'groupfun/chat', 'kkl/maniang.jpeg').cqcode)
 
 
 @sv.on_keyword(('会战'))
