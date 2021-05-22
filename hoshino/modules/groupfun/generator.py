@@ -3,6 +3,7 @@ import random
 import datetime
 from random import choice
 from PIL import Image, ImageDraw, ImageFilter
+from urllib.parse import quote
 
 from hoshino import R, Service
 from hoshino.util import pic2b64, FreqLimiter
@@ -209,13 +210,11 @@ async def showtime(bot, ev):
     await bot.send(ev, outputpic.cqcode, at_sender=False)
 
 
-@sv.on_prefix(('5k','5K'), only_to_me=True)
+@sv.on_prefix(('5k', '5K'), only_to_me=True)
 async def _5k(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip().split()
     if len(kw) == 2:
-        url = f'https://api.dihe.moe/5000choyen/?upper={kw[0]}&&lower={kw[1]}'
-        if url[-1] not in '！）：，》；”。':
-            url += ' '
-        pic = await R.tem_img(
-            'groupfun/generator', '5k.png').download(url, typecheck=False)
-        await bot.send(ev, pic.cqcode)
+        url = f'https://gsapi.cyberrex.ml/image?top={quote(kw[0])}&bottom={quote(kw[1])}'
+        #pic = await R.tem_img(
+        #    'groupfun/generator', '5k.png').download(url)
+        await bot.send(ev, MessageSegment.image(url))
