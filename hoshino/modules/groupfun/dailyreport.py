@@ -27,17 +27,19 @@ async def msgstore(bot, ev: CQEvent):
 
 def genimg(gid):
     data = R.data(f'groupfun/dayreport/{gid}.json', 'json')
-    cont = data.read
-    cont = ' '.join(cont)
-    Ws = WordCloud(
-        width=800,
-        height=600,
-        font_path=R.font('simhei.ttf').path,
-        background_color='white',
-        stopwords=stopwords
-    ).generate(cont)
-    img = Ws.to_image()
-    return MessageSegment.image(util.pic2b64(img))
+    if data.exist:
+        cont = data.read
+        if len(cont) > 10:
+            cont = ' '.join(cont)
+            Ws = WordCloud(
+                width=800,
+                height=600,
+                font_path=R.font('simhei.ttf').path,
+                background_color='white',
+                stopwords=stopwords
+            ).generate(cont)
+            img = Ws.to_image()
+            return MessageSegment.image(util.pic2b64(img))
 
 @sv.scheduled_job('cron', hour='23', minute='59')
 async def genreport():
@@ -45,11 +47,14 @@ async def genreport():
     Gening = True
     glist = await sv.get_enable_groups()
     for gid in glist:
-        await sv.bot.send_group_msg(
-                group_id=gid,
-                message=f'本日词云\n{genimg(gid)}'
-            )
-        R.data(f'groupfun/dayreport/{gid}.json', 'json').delete()
+        pic = genimg(gid)
+        if pic:
+            await sv.bot.send_group_msg(
+                    group_id=gid,
+                    message='本日词云\n'+pic
+                )
+        if (i := R.data(f'groupfun/dayreport/{gid}.json', 'json')).exist:
+            i.delete()
     Gening = False
 
 @sv.on_fullmatch('本日词云', only_to_me=True)

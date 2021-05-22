@@ -4,6 +4,7 @@ from collections import defaultdict
 from PIL import Image
 
 from hoshino import Service, priv, util, R
+import hoshino
 from hoshino.typing import CQEvent, MessageSegment
 from hoshino.util import DailyNumberLimiter, concat_pic, pic2b64, silence
 
@@ -179,9 +180,13 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
         if up and not onlyforup:
             msg.append(f"第{fup}抽首次获得up角色")
         if onlyforup:
-            if 'getnewup' in result:
-                ifnew = '新' if result['getnewup'] else ''
-                msg.append(f'抽到了！好耶！\n第{fup}抽到{ifnew}up角色！，花费{fup*150}宝石')
+            if up:
+                if 'cost' not in result:
+                    ifnew = '新' if result['getnewup'] else ''
+                    msg.append(f'抽到了！好耶！\n第{fup}抽到{ifnew}up角色！，花费{fup*150}宝石')
+                else:
+                    cost = result['cost']
+                    msg.append(f'歪了！坏耶！\n第{fup}首次歪到up角色！抽了{cost}发也没抽到新的，花费{cost*150}宝石')
             else:
                 msg.append(f"沉船了...呜呜呜...\n抽了{fup}发，花费{fup*150}宝石")
     if result['prize']:
@@ -226,13 +231,14 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
         elif up == 0:
             msg.append("据说天井的概率只有12.16%")
         elif up <= 2:
-            if result['first_up_pos'] < 40:
+            fup = result['first_up_pos'] if 'cost' not in result else result['cost']
+            if fup < 40:
                 msg.append("你的喜悦我收到了，滚去喂鲨鱼吧！")
-            elif result['first_up_pos'] < 80:
+            elif fup < 80:
                 msg.append("已经可以了，主さま已经很欧了")
-            elif result['first_up_pos'] > 190:
+            elif fup > 190:
                 msg.append("标 准 结 局")
-            elif result['first_up_pos'] > 150:
+            elif fup > 150:
                 msg.append("补井还是不补井，这是一个问题...")
             else:
                 msg.append("期望之内，亚洲水平")
@@ -368,7 +374,6 @@ async def gacha_200(bot, ev: CQEvent):
 async def allin(bot, ev: CQEvent):
     gid = str(ev.group_id)
     uid = ev.user_id
-
     await check_jewel_num(bot, ev, 150)
     await check_if_fail(bot, ev, 0.03)
     pool = await set_my_pool(bot, ev)
@@ -378,7 +383,7 @@ async def allin(bot, ev: CQEvent):
     await bot.send(ev, '正在抽干家底...')
     num = min(pcrCoins(uid, '宝石').cnum // 150, 200)
     result = gacha.gacha_tenjou(num, True)
-    gachatimes = min(num, result["first_up_pos"])
+    gachatimes = min(num, result["first_up_pos"] if 'cost' not in result else result['cost'])
     pcrCoins(uid, '宝石').red_C(gachatimes*150)
     res = result['chara']
     lenth = len(res)

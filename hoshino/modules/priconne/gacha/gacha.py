@@ -138,7 +138,7 @@ class Gacha(object):
             self.result['new'].append(getc.name)
         else:
             self.result['hiishi'] += startohiishi[getc.star]
-        if not only_s3 or getc.star == 3:
+        if (not only_s3) or getc.star == 3:
             self.result['chara'].append(getc)
         if self.prize:
             card = self.prize_card()
@@ -191,7 +191,7 @@ class Gacha(object):
         s1 = 1000 - s3 - s2
         if only_for_up:
             for i in self.up:
-                if not pcrCharas(self.uid, i).check_Cexist:
+                if not pcrCharas(self.uid, chara.name2id(i)).check_Cexist:
                     for_new_up = True
                     break
             else:
@@ -207,9 +207,10 @@ class Gacha(object):
             if lup == 0 and rup == 1:
                 first_up_pos = i+1
             if lup < rup and only_for_up:
-                if ln < rn or not for_new_up:
+                if ln < rn or (not for_new_up):
                     self.result['first_up_pos'] = i+1
                     self.result['getnewup'] = for_new_up
                     return self.result
         self.result['first_up_pos'] = first_up_pos
+        self.result['cost'] = i+1
         return self.result

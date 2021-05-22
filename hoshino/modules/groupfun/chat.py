@@ -256,16 +256,16 @@ async def chat_wenhao(bot, ev):
     rtest = random.random()
     if rtest < 0.1:
         await bot.send(ev, R.img('groupfun/chat', 'taowa/wenhao.jpg').cqcode)
-    elif rtest < 0.15:
-        await bot.send(ev, '?')
-    elif rtest < 0.2:
-        await bot.send(ev, '？')
     elif rtest < 0.25:
-        await bot.send(ev, '¿ ')
+        await bot.send(ev, random.choice('?', '？', '¿ '))
     elif rtest < 0.3:
         await bot.send(ev, R.img('groupfun/chat', 'maimeng/wenhao.jpg').cqcode)
     elif rtest < 0.35:
         await bot.send(ev, R.img('groupfun/chat', 'maimeng/wenhao.png').cqcode)
+    elif rtest < 0.4:
+        await bot.send(ev, R.img('groupfun/chat', 'kkl/wenhao.jpg').cqcode)
+    elif rtest < 0.45:
+        await bot.send(ev, R.img('groupfun/chat', 'kkl/wenhao.jpeg').cqcode)
 
 
 # =====================keyword======================= #
@@ -413,9 +413,8 @@ async def chat_guashu(bot, ctx):
 
 @sv.on_keyword(('马娘', '🐎娘'))
 async def chat_maniang(bot, ctx):
-    if random.random() < 0.05:
-        await bot.send(ctx, R.img(
-            'groupfun/chat', 'kkl/maniang.jpeg').cqcode)
+    if random.random() < 0.3:
+        await bot.send(ctx, R.img('kkl/maniang.jpeg').cqcode)
 
 
 @sv.on_keyword(('会战'))
@@ -489,11 +488,8 @@ async def chat_bhbbhb(bot, ev):
 async def chat_catchat(bot, ev):
     p = 1
     msg = '喵'
-    while p > 0:
-        if random.random() > p:
-            break
+    while random.random() < (p := p - 0.19):
         msg += random.choice(('喵', '喵', '?', '!'))
-        p -= 0.2
     await bot.send(ev, msg)
 
 """ @sv.on_rex(r'(.*)[123](.*)')
@@ -524,9 +520,7 @@ async def kuaijiehuifu(bot, ev):
                 'groupfun/chat', f'kuaijiehuifu/{quickreplylist[s]}').cqcode))
     else:
         msg.append("现在的快捷回复有")
-        for i in quickreplylist:
-            msg.append(i)
-        # return
+        msg.extend(quickreplylist.keys())
     await bot.send(ev, '\n'.join(msg))
 
 # =====================notice======================= #
