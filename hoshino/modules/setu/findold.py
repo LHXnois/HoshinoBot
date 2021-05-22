@@ -12,7 +12,7 @@ EXCEED_NOTICE = f'您今天已经冲过{_max}次了，请明早5点后再来！'
 _nlmt = DailyNumberLimiter(_max)
 _flmt = FreqLimiter(5)
 oldsetu_folder = R.img('setu/oldimgs/').path
-maxdeep=len(os.listdir(oldsetu_folder))
+maxdeep = len(os.listdir(oldsetu_folder))
 sv = Service('findold', manage_priv=priv.SUPERUSER,
              enable_on_default=True, help_=f'''考 古 发 现
 取自一位一般互联网用户的qq图片文件夹）
@@ -61,7 +61,8 @@ infodata = {
     8: '20.5 ~ 20.8',
     9: '20.8 ~ 20.10',
     10: '20.10 ~ 21.1',
-    11: '21.1 ~ 21.3'
+    11: '21.1 ~ 21.3',
+    12: '21.3 ~ 21.4'
 }
 
 # defaultsetu_gener = setu_gener()

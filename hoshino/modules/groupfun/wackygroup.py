@@ -147,11 +147,9 @@ async def weiba(bot, ev: CQEvent):
     ecode = u'\u202d'
     kw = ev.message.extract_plain_text().strip()
     weiba = fcode+kw[::-1]+ecode
-    Gm_ = Gm(ev)
-    oldcard = await Gm_.member_info(ev.user_id, 'card')
-    if not oldcard:
-        oldcard = await Gm_.member_info(ev.user_id, 'nickname')
+    oldcard = ev.sender['card'] or ev.sender['nickname']
     newcard = oldcard+weiba
+    Gm_ = Gm(ev)
     try:
         if await Gm_.card_set(ev.user_id, newcard) == Gm_.PRIV_NOT_ENOUGH:
             await bot.send(ev, '好像不能亲手给你戴上呢> <，请自己全选复制换上去吧~', at_sender=True)
