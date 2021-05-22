@@ -18,7 +18,7 @@ from PIL import Image
 import hoshino
 from hoshino.typing import CQEvent, Message, Union, MessageSegment
 from .yinglish import chs2yin
-
+import random
 
 try:
     import ujson as json
@@ -286,3 +286,37 @@ def gencardimage(file, source=None, icon=None):
     source = f',source={source}' if source else ''
     icon = f',icon={icon}' if icon else ''
     return f'[CQ:cardimage,file={file}{source}{icon}]'
+
+
+def genchain(msg: str, name: str = None, uin: int = None):
+    if not name:
+        name = hoshino.config.NICKNAME[0]
+    if not uin:
+        for id in hoshino.get_self_ids():
+            uin = id
+            break
+    data = {
+            "type": "node",
+            "data": {
+                "name": name,
+                "uin": str(uin),
+                "content": str(msg)
+                    }
+        }
+    return data
+
+
+async def chain_replay(bot, ev, msgchain, gened=True):
+    gid = ev.group_id
+    if gened:
+        chain = msgchain
+    else:
+        chain = []
+        uid = ev.self_id
+        name = hoshino.config.NICKNAME[0]
+        for _ in msgchain:
+            chain.append(genchain(_, name, uid))
+    if chain:
+        await bot.send_group_forward_msg(
+            group_id=gid,
+            messages=chain)
