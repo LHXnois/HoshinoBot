@@ -58,7 +58,6 @@ Hololive ホロ 木口 术口
 亚绮 罗森塔尔 ローゼンタール Rosenthal akirose 李姐 力速双A弱精灵
 白上吹雪 白上フブキ Shirakami 喵喵狐 debuki 玉米人 赫鲁晓狐 工具狐
 人见酷丽丝 人見クリス Hitomi Kurisu
-凑阿库娅 湊あくあ Minato 阿夸 夸哥 夸神 山田赫敏 大亏哥 桐谷夸人
 紫咲诗音 紫咲シオン Murasaki 傻紫 紫咲紫苑
 百鬼绫目 百鬼あやめ Nakiri 绫目
 愈月巧可 癒月ちょこ Yuzuki 巧可老师
