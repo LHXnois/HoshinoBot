@@ -477,7 +477,7 @@ class SubService(Service):
 
     async def get_enable_groups(self) -> dict:
         """获取所有启用本服务的群
-        
+
         @return { group_id: [self_id1, self_id2] }
         """
         gl = defaultdict(list)

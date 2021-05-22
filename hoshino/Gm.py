@@ -24,10 +24,9 @@ class Gm:
             self.sid = ev.self_id
             self.gid = ev.group_id
         mg = Gm.managegroups
-        if self.gid in mg:
-            self.role = mg[self.gid]['role']
-        else:
+        if self.gid not in mg:
             mg[self.gid] = mg['default']
+        self.role = mg[self.gid]['role']
         self.privs = mg[self.gid]
 
     # 群员信息
@@ -168,6 +167,7 @@ class Gm:
             self.role = await self.member_info(self.sid, 'role')
             self.privs['role'] = self.role
             self.privs['needroleupdate'] = False
+            Gm.managegroups[self.gid] = self.privs
 
     # 随机成员
     async def random_member(self) -> int:
