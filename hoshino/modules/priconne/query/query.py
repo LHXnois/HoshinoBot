@@ -3,6 +3,7 @@ from hoshino import util, R
 from hoshino.typing import CQEvent
 from . import sv
 
+
 @sv.on_rex(r'^jjc((作业(网)?)|数据库)?$')
 async def say_arina_database(bot, ev):
     await bot.send(ev, '''公主连接Re:Dive 竞技场编成数据库

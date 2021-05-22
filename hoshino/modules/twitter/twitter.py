@@ -23,6 +23,7 @@ sv = Service('twitter-poller', use_priv=priv.SUPERUSER,
 
 URL_TIMELINE = 'statuses/user_timeline'
 
+
 subr_dic = {}
 subr_dic['news'] = {
     # 'KanColle_STAFF', 'C2_STAFF',
@@ -122,41 +123,23 @@ async def tweet_formatter(item):
     name = item['user']['name']
     time = time_formatter(item['created_at'])
     text = item['full_text']
-    if 'media' in item['entities']:
-        img = []
-        is_extend = 'extended_' if 'extended_entities' in item else ''
-        for i in item[f'{is_extend}entities']['media']:
-            if i['type'] in 'photoanimated_gifvideo':
-                if i['type'] == 'photo':
-                    url = i['media_url']
-                    ttype = 'img'
-                    imgname = url.split('/')[-1]
-                    imgget = await R.tem(
-                        ttype, 'twitter', imgname).download(url, True)
-                elif i['type'] in 'animated_gifvideo':
-                    url = i['video_info']['variants'][0]['url']
-                    ttype = 'video'
-                    imgname = url.split('/')[-1]
-                    try:
-                        imgget = await R.tem(
-                            ttype, 'twitter', imgname).download(url, True)
-                    except Exception:
-                        url = i['media_url']
-                        ttype = 'img'
-                        imgname = url.split('/')[-1]
-                        imgget = await R.tem(
-                            ttype, 'twitter', imgname).download(url, True)
-                img.append(f"{imgget.cqcode}")
-        img = '\n'.join(img)
-    else:
-        img = ''
-    return f"@{name}\n{time}\n\n{text}{img}"
+    imgs = []
+    for media in item.get('extended_entities', item['entities']).get('media', []):
+        try:
+            img = media['media_url']
+            if re.search(r'\.(jpg|jpeg|png|gif|jfif|webp)$', img, re.I):
+                imgs.append(str(ms.image(img)))
+        except Exception as e:
+            sv.logger.exception(e)
+    imgs = ' '.join(imgs)
+    return f"@{name}\n{time}\n\n{text}\n{imgs}"
+
 
 
 def has_media(item):
     try:
-        return bool(item['entities']['media'][0]['media_url'])
-    except Exception:
+        return bool(item['extended_entities']['media'][0]['media_url'])
+    except:
         return False
 
 
@@ -258,17 +241,16 @@ async def one_tweet(bot, ev: CQEvent):
         'screen_name': account,
         'count': count,
         'tweet_mode': 'extended',
+        'include_rts': False,
     }
     rsp = await twt_request(URL_TIMELINE, params)
     items = rsp.get_iterator()
-    if account in latest_info['illust'] and latest_info['illust'][account]['media_only']:
-        items = filter(has_media, items)
-    #twts = list(map(tweet_formatter, items))
-    twts = [await tweet_formatter(i) for i in items]
+    # if account in latest_info and latest_info[account]['media_only']:
+    #     items = filter(has_media, items)
+    twts = list(map(tweet_formatter, items))
     for t in twts:
         try:
             await bot.send(ev, t)
-        except Exception:
-            await asyncio.sleep(0.01)
-            await bot.send(ev, t)
+        except Exception as e:
+            sv.logger.exception(e)
         await asyncio.sleep(0.5)

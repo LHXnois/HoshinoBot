@@ -43,5 +43,6 @@ MODULES_ON = {
     'priconne',
     # 'setu',
     # 'translate',
-    # 'twitter',
+    # 'twitter',            # 轮询版转推（old）
+    # 'twitter_stream',     # 推流版转推（beta）
 }

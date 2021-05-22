@@ -52,4 +52,4 @@ def get_self_ids():
 
 
 from . import R, C
-from .service import Service, sucmd, SubService
+from .service import Service, sucmd, priv, SubService

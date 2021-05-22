@@ -102,8 +102,7 @@ class Service:
         定义一个服务
         配置的优先级别：配置文件 > 程序指定 > 缺省值
         """
-        assert not _re_illegal_char.search(
-            name), r'Service name cannot contain character in `\/:*?"<>|.`'
+        assert not _re_illegal_char.search(name), r'Service name cannot contain character in `\/:*?"<>|.`'
 
         config = _load_service_config(name)
         self.name = name
@@ -176,8 +175,7 @@ class Service:
         """
         gl = defaultdict(list)
         for sid in hoshino.get_self_ids():
-            sgl = set(g['group_id']
-                      for g in await self.bot.get_group_list(self_id=sid))
+            sgl = set(g['group_id'] for g in await self.bot.get_group_list(self_id=sid))
             if self.enable_on_default:
                 sgl = sgl - self.disable_group
             else:
@@ -211,15 +209,15 @@ class Service:
                 trigger.prefix.add(p, sf)
             return func
         return deco
-    
-    
+
+
     def on_fullmatch(self, word, only_to_me=False) -> Callable:
         if isinstance(word, str):
             word = (word, )
         def deco(func) -> Callable:
             @wraps(func)
             async def wrapper(bot: HoshinoBot, event: CQEvent):
-                if len(event.message) != 1 or event.message[0].data['text']:
+                if len(event.message) != 1 or event.message[0].data.get('text'):
                     self.logger.info(f'Message {event.message_id} is ignored by fullmatch condition.')
                     return
                 return await func(bot, event)
@@ -342,35 +340,19 @@ class Service:
         bot = self.bot
         if isinstance(msgs, (str, MessageSegment, Message)):
             msgs = (msgs, )
-        glist = await self.get_enable_groups()
-        for gid, selfids in glist.items():
-            for msg in msgs:
-                await asyncio.sleep(interval_time)
-                msg = randomiser(msg) if randomiser else msg
-                await self.retrybc(selfids, gid, TAG, msg, retry)
-            ml = len(msgs)
-            if ml:
-                self.logger.info(f"群{gid} 投递{TAG}任务启动成功 共{ml}条消息")
-
-    async def retrybc(self, selfids, gid, TAG, msg, retry):
-        try:
-            self.logger.info(
-                f"群{gid} 尝试投递{TAG}消息：{msg if len(msg)<20 else msg[:15]}\n剩余尝试次数{retry}次")
-            await self.bot.send_group_msg(
-                self_id=random.choice(selfids),
-                group_id=gid,
-                message=msg
-            )
-        except Exception as e:
-            self.logger.error(f"群{gid} 投递{TAG}失败：{type(e)}剩余尝试次数{retry+1}次")
-            self.logger.exception(e)
-            retry -= 1
-            if retry >= 0:
-                util.add_delay_job(
-                    self.retrybc,
-                    f'bc_{gid}_{retry}_{time.time()}',
-                    60,
-                    [selfids, gid, TAG, msg, retry])
+        groups = await self.get_enable_groups()
+        for gid, selfids in groups.items():
+            try:
+                for msg in msgs:
+                    await asyncio.sleep(interval_time)
+                    msg = randomiser(msg) if randomiser else msg
+                    await bot.send_group_msg(self_id=random.choice(selfids), group_id=gid, message=msg)
+                l = len(msgs)
+                if l:
+                    self.logger.info(f"群{gid} 投递{TAG}成功 共{l}条消息")
+            except Exception as e:
+                self.logger.error(f"群{gid} 投递{TAG}失败：{type(e)}")
+                self.logger.exception(e)
 
     def on_request(self, *events):
         def deco(func):

@@ -4,8 +4,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 import hoshino
 from hoshino import Service, R
-from hoshino.typing import CQEvent, MessageSegment, CommandSession
-from hoshino.util import FreqLimiter, concat_pic, pic2b64, silence
+from hoshino.typing import *
+from hoshino.util import FreqLimiter, concat_pic, pic2b64, silence, filt_message
+
 
 from .. import chara
 
@@ -152,7 +153,7 @@ async def _arena_query(bot, ev: CQEvent, region: int):
         res = await arena.do_query(defen, uid, region)
     except hoshino.aiorequests.HTTPError as e:
         code = e.response["code"]
-        if code == 117:
+        if code == 117 or code == -429:
             await bot.finish(
                 ev,
                 f"{sorrypicgif}\n高峰期服务器限勒><！请前往pcrdfans.com/battle")
@@ -191,12 +192,13 @@ async def _arena_query(bot, ev: CQEvent, region: int):
     #     "你赞过" if e['user_like'] > 0 else "你踩过" if e['user_like'] < 0 else ""
     # ]) for e in res]
 
-    # defen = [ chara.fromid(x).name for x in defen ]
-    # defen = f"防守方【{' '.join(defen)}】"
+    defen = [ chara.fromid(x).name for x in defen ]
+    defen = f"防守方【{' '.join(defen)}】"
     at = str(MessageSegment.at(ev.user_id))
 
     msg = [
-        # defen,
+        defen,
+        # at,
         f'已为主人{at}查询到以下进攻方案：',
         str(teams),
         # '作业评价：',
