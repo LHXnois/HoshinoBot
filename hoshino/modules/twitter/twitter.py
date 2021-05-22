@@ -36,11 +36,50 @@ subr_dic['illust'] = {
             enable_on_default=False, visible=False): ['shiratamacaron', 'k_yuizaki', 'suzukitoto0323'],
     Service('lhx-favorite-twitter', manage_priv=priv.SUPERUSER,
             enable_on_default=False,
-            visible=False): [#  'shiratamacaron', 'k_yuizaki', 'suzukitoto0323',
+            visible=False): [#'shiratamacaron', 'k_yuizaki', 'suzukitoto0323',
                              'tsukimi08', 'blade4649', 'itiri', 'MauveSR',
                              'hoshi_u3', 'gurasion0310', 'amsrntk3',
                              'nejikirio', 'siragagaga', 'kedamaa',
-                             'chatsune21', '_himehajime'],
+                             'chatsune21', '_himehajime', 'kasu1923',
+                             'tatami10jyo', 'miyase_mahiro', 'Byul_zzi',
+                             'tofumentalzabut', 'kokemoco', 'BACHeally',
+                             'NaiZ0_T', 'bluexkiller', 'konachi_e',
+                             'fusumam', '09ra_19ra', 'gotyou', 'fujii_shino',
+                             '_rucaco_', '1kurusk', 'jimmy_madomagi',
+                             'risveglio', 'rebirth55582', 'psyche047',
+                             'koma_momozu', 'suimya', '_sironora_',
+                             'irokari_kkr', 'usagicandy_taku', 'kimishima_ao',
+                             'zo3mie', 'rulu_py', 'rurudo_', 'Nam990902',
+                             'Utatanesub', 'AnzuAmE_222', '_fuyutsuki',
+                             '8_18dlq', 'who_pu', 'suki_suke', '888myrrh888',
+                             'enoki_art', 'kuno_on', 'sikitani_asuka',
+                             'takano_yuki', 'hanamori59ya', 'done_kanda',
+                             'marisayaka16', '_namori_', 'xx_Chon_xx',
+                             'suzukannn', 'Hyouuma', 'aka_bake', 'Nekojira',
+                             '77gl', 'askziye', '0_shusi_', 'tutsucha',
+                             'weri__', 'atwomaru', 'Bibimbub15', 'lidukelaya',
+                             'shinobi_nya', 'jyodankoto', 'AIKOlik',
+                             'hibitsuna', 'karory', 'ameto_y', 'SPSRC',
+                             'r_e_mimimi', 'mituk1', 'sksktktk', 'km170',
+                             'swd3e22', 'chiri_ap', 'ko_mugiiiii',
+                             'melty_pot', 'misuzu_satsuki', 'ainy120'
+                             'happy_turn2nd', 'ikataruto', 'kurokanin',
+                             'ame_usari', 'akmkmk3', 'muninshiki',
+                             'yoa0328', '__Luzzi', 'kanzi30855',
+                             'Haruka_546', 'rik0ring', 'Smile_tsubame',
+                             'Opal_00_58', 'M_uu418', 'siro90414',
+                             'Nengoro2739', 'nyakocha', 'KIYOSATO_0928',
+                             'nimono_', 'onineko26', 'Anmi_', 'yukishimamomo',
+                             'Renew_ViVi', 'RKtorinegi', 'somna825',
+                             'crerp', 'tukiman02', 'chihiro_15_',
+                             'aosorayuri24', 'Ci_syo', 'love_makira',
+                             'ZUU_SnowyOwl', 'adahemas', 'yuuhagi',
+                             'Komone_Ushio', '14chendoe', 'amano_mizu',
+                             'oke_yzw', 'shiina_2256', 'Zoirun',
+                             'hi_mi_tsu_2', 'kurige_horse', 'haori_crescendo',
+                             'ginklaga', '_cnknc_', 'twdshamano',
+                             'mignon', 'castilla_suzu', 'ayamy_garubinu',
+                             'blaulac', 'lcr828', 'Mokew_'],
 }
 
 latest_info = {}
@@ -156,24 +195,27 @@ async def poll_new_tweets(bundle: str, account: str):
 
 # Requests/15-min window: 900  == 1 req/s
 _subr_num = len(latest_info['news'])
-_freq = 20 * _subr_num
+_subr_num_i = len(latest_info['illust'])
+_freq = 5 * _subr_num
+_freq_i = 10 * _subr_num_i
 sv.logger.info(f"twitter_poller works at {_subr_num} / {_freq} seconds")
-
+sv.logger.info(f"twitter_poller_i works at {_subr_num_i} / {_freq_i} seconds")
 
 @sv.scheduled_job('interval', seconds=_freq)
 async def twitter_poller_news():
     await twitter_poller('news')
 
 
-@sv.scheduled_job('interval', hours=2)
+@sv.scheduled_job('interval', seconds=_freq_i)
 async def twitter_poller_illust():
-    await twitter_poller('illust')
-    util.add_delay_job(twitter_poller, 'illustpoller', 300, ['illust'])
+    await twitter_poller('illust', True)
 
 
-async def twitter_poller(bundle: str):
+async def twitter_poller(bundle: str, stop=False):
     buf = {}
     for account in latest_info[bundle]:
+        if stop:
+            await asyncio.sleep(0.1)
         try:
             buf[account] = await poll_new_tweets(bundle, account)
             if l := len(buf[account]):

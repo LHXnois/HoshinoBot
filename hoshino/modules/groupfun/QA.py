@@ -175,7 +175,7 @@ async def addGUQA(bot, ev: CQEvent):
     groupuserQ[gid][uid].add(Qu)
 
 
-@sv.on_prefix('我问')
+@sv.on_prefix(('我问', '我说'))
 async def addUQA(bot, ev: CQEvent):
     uid = ev.user_id
     cacheinit(ev.group_id, uid)
@@ -203,6 +203,7 @@ async def addAQA(bot, ev: CQEvent):
 @sv.on_prefix(('不要回答', '删除问答'))
 async def delQA(bot, ev: CQEvent):
     Qu = await stor_pic(str(ev.message), False)
+    gid = ev.group_id
     cacheinit(ev.group_id, ev.user_id)
     if priv.check_priv(ev, priv.SUPERUSER) and Qu in globalQ:
         await delqa(bot, ev, Qu, 1, 1)
