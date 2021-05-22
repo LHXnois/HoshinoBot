@@ -350,15 +350,16 @@ async def send_ranking_setu(bot, ev):
 async def get_spec_setu(bot, ev):
     args = ev.message.extract_plain_text().split()
     try:
-        args = args[0]
+        arg = args[0]
     except:
         await bot.send(ev, '请在命令之后提供p站id哦~')
         return
-    args = str(args)
-    if len(args) == 8:
-        msg = get_spec_image(args)
+    arg = str(arg)
+    if len(arg) == 8:
+        msg = get_spec_image(arg)
         if not msg:
-            await bot.send(ev, f'没有在本地找到这张图片/不支持r18图片的提取\n原图地址:https://pixiv.lancercmd.cc/{args}')
+            _p = '' if len(args) < 2 else args[1]
+            await bot.send(ev, f'[CQ:share,url=https://pixiv.lancercmd.cc/{arg}/{_p},title={arg},content=0x0,image=https://lolibest.ltd/kokkoro_stamp.ico]')
         else:
             await bot.send(ev, msg)
     else:
