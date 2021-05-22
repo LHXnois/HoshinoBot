@@ -6,7 +6,10 @@ from lxml import etree
 import hoshino
 from hoshino import Service, aiorequests
 
-sv = Service('bangumi', enable_on_default=False, help_='蜜柑番剧更新推送')
+sv = Service('bangumi', enable_on_default=False, help_='''
+蜜柑番剧更新推送
+[#来点新番]看看订阅更新
+有想订阅的番的话可以@蓝红心'''.strip())
 
 class Mikan:
     link_cache = set()
@@ -97,7 +100,7 @@ async def mikan_poller():
 
 DISABLE_NOTICE = '本群蜜柑番剧功能已禁用\n使用【启用 bangumi】以启用（需群管理）\n开启本功能后将自动推送字幕组更新'
 
-@sv.on_fullmatch('来点新番')
+@sv.on_fullmatch('来点新番', only_to_me=True)
 async def send_bangumi(bot, ev):
     if not Mikan.rss_cache:
         await Mikan.update_cache()

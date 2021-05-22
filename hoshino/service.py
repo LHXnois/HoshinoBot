@@ -1,10 +1,11 @@
 import asyncio
+from hoshino import util
 import os
 import random
 import re
 from collections import defaultdict
 from functools import wraps
-
+import time
 import nonebot
 import pytz
 from nonebot.command import SwitchException, _FinishException, _PauseException
@@ -131,6 +132,12 @@ class Service:
     @property
     def bot(self):
         return hoshino.get_bot()
+
+    @property
+    def bundle(self):
+        for i in _service_bundle:
+            if self in _service_bundle[i]:
+                return i
 
     @staticmethod
     def get_loaded_services() -> Dict[str, "Service"]:
@@ -329,8 +336,7 @@ class Service:
             return nonebot.scheduler.scheduled_job(*args, **kwargs)(wrapper)
         return deco
 
-
-    async def broadcast(self, msgs, TAG='', interval_time=0.5, randomiser=None):
+    async def broadcast(self, msgs, TAG='', interval_time=0.5, randomiser=None, retry=1):
         bot = self.bot
         if isinstance(msgs, (str, MessageSegment, Message)):
             msgs = (msgs, )
@@ -348,7 +354,6 @@ class Service:
                 self.logger.error(f"群{gid} 投递{TAG}失败：{type(e)}")
                 self.logger.exception(e)
 
-
     def on_request(self, *events):
         def deco(func):
             @wraps(func)
@@ -358,8 +363,7 @@ class Service:
                 return await func(session)
             return nonebot.on_request(*events)(wrapper)
         return deco
-    
-    
+
     def on_notice(self, *events):
         def deco(func):
             @wraps(func)
@@ -370,9 +374,44 @@ class Service:
             return nonebot.on_notice(*events)(wrapper)
         return deco
 
-
+    def on_replay(self, startwith: str = '') -> Callable:
+        def deco(func) -> Callable:
+            @wraps(func)
+            async def wrapper(ctx):
+                if ctx.message[0]['type'] != 'reply':
+                    return
+                if self._check_all(ctx):
+                    first = 1
+                    if startwith:
+                        while first <= 3:
+                            if ctx.message[first]['type'] != 'text' or ctx.message[first]['data']['text'] == ' ':
+                                first += 1
+                            else:
+                                break
+                        else:
+                            return
+                        fmsg = ctx.message[first]['data']['text'].strip()
+                        if not fmsg.startswith(startwith):
+                            return
+                    ctx['quote_message'] = await self.bot.get_msg(
+                        message_id=ctx.message[0]['data']['id'])
+                    ctx['quote_message']['message'] = Message(
+                        ctx['quote_message']['message'])
+                    ctx['rep_message'] = Message(ctx.message[first:])
+                    if startwith:
+                        fmsg = ctx['rep_message'][0]['data']['text'].strip()
+                        ctx['rep_message'][0]['data']['text'] = fmsg[len(startwith):]
+                    try:
+                        return await func(self.bot, ctx)
+                    except Exception as e:
+                        self.logger.error(f'{type(e)} occured when {func.__name__} handling message {ctx["message_id"]}.')
+                        self.logger.exception(e)
+                    return
+            return self.bot.on_message('group')(wrapper)
+        return deco
 
 sulogger = log.new_logger('sucmd', hoshino.config.DEBUG)
+
 
 def sucmd(name, force_private=True, **kwargs) -> Callable:
     kwargs['privileged'] = True
@@ -394,3 +433,43 @@ def sucmd(name, force_private=True, **kwargs) -> Callable:
                 sulogger.exception(e)
         return nonebot.on_command(name, **kwargs)(wrapper)
     return deco
+
+
+class SubService(Service):
+    def __init__(self, name, main_service: Service, use_priv=None, manage_priv=None, enable_on_default=None, visible=None,
+                 help_=None):
+        assert main_service.name in _loaded_services, f'Service name "{main_service.name}" not exist!'
+        if not use_priv:
+            use_priv = main_service.use_priv
+        if not manage_priv:
+            manage_priv = main_service.manage_priv
+        Service.__init__(self, name,
+                         use_priv=use_priv,
+                         manage_priv=manage_priv,
+                         enable_on_default=enable_on_default,
+                         visible=enable_on_default,
+                         help_=help_,
+                         bundle=main_service.bundle)
+        self.main_service = main_service
+
+    def check_enabled(self, group_id):
+        if self.main_service.check_enabled(group_id):
+            return bool( (group_id in self.enable_group) or (self.enable_on_default and group_id not in self.disable_group))
+        return False
+
+    async def get_enable_groups(self) -> dict:
+        """获取所有启用本服务的群
+
+        @return { group_id: [self_id1, self_id2] }
+        """
+        gl = defaultdict(list)
+        for sid in hoshino.get_self_ids():
+            sgl = set(g['group_id']
+                      for g in await self.bot.get_group_list(self_id=sid))
+            if self.enable_on_default:
+                sgl = (sgl - self.disable_group) - self.main_service.disable_group
+            else:
+                sgl = (sgl & self.enable_group) & self.main_service.enable_group
+            for g in sgl:
+                gl[g].append(sid)
+        return gl

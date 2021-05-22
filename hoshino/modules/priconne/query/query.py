@@ -3,67 +3,20 @@ from hoshino import util, R
 from hoshino.typing import CQEvent
 from . import sv
 
-rank_jp = '20-4'
-rank_tw = '19-4'
-rank_cn = '12-5'
-ptw = ' '.join(map(str, [
-    R.img(f'priconne/quick/r{rank_tw}-tw-0.png').cqcode,
-    R.img(f'priconne/quick/r{rank_tw}-tw-1.png').cqcode,
-    R.img(f'priconne/quick/r{rank_tw}-tw-2.png').cqcode,
-    R.img(f'priconne/quick/r{rank_tw}-tw-3.png').cqcode,
-]))
-pjp = ' '.join(map(str, [
-    R.img(f'priconne/quick/r{rank_jp}-jp-1.png').cqcode,
-    R.img(f'priconne/quick/r{rank_jp}-jp-2.png').cqcode,
-    R.img(f'priconne/quick/r{rank_jp}-jp-3.png').cqcode,
-]))
-pcn = ' '.join(map(str, [
-    R.img(f'priconne/quick/r{rank_cn}-cn-1.png').cqcode,
-    R.img(f'priconne/quick/r{rank_cn}-cn-2.png').cqcode,
-]))
 
-@sv.on_rex(r'^(\*?([日台国陆b])服?([前中后]*)卫?)?rank(表|推荐|指南)?$')
-async def rank_sheet(bot, ev):
-    match = ev['match']
-    is_jp = match.group(2) == '日'
-    is_tw = match.group(2) == '台'
-    is_cn = match.group(2) and match.group(2) in '国陆b'
-    if not is_jp and not is_tw and not is_cn:
-        await bot.send(ev, '\n请问您要查询哪个服务器的rank表？\n*日rank表\n*台rank表\n*陆rank表', at_sender=True)
-        return
-    msg = [
-        '\n表格仅供参考',
-        # '\n※rank表仅供参考，升r有风险，强化需谨慎\n※请以会长要求为准',
-    ]
-    if is_jp:
-        msg.append(f'※不定期搬运自图中Q群\n※广告为原作者推广，与本bot无关\nR{rank_jp} rank表：\n{pjp}')
-        # pos = match.group(3)
-        # if not pos or '前' in pos:
-        #     msg.append(str(p4))
-        # if not pos or '中' in pos:
-        #     msg.append(str(p5))
-        # if not pos or '后' in pos:
-        #     msg.append(str(p6))
-        await bot.send(ev, '\n'.join(msg), at_sender=True)
-        await util.silence(ev, 60)
-    elif is_tw:
-        msg.append(f'※不定期搬运自漪夢奈特\n※详见油管频道\nR{rank_tw} rank表：\n{ptw}')
-        await bot.send(ev, '\n'.join(msg), at_sender=True)
-        await util.silence(ev, 60)
-    elif is_cn:
-        msg.append(f'※不定期搬运自B站专栏\n※制作by席巴鸽\nR{rank_cn} rank表：\n{pcn}')
-        await bot.send(ev, '\n'.join(msg), at_sender=True)
-        await util.silence(ev, 60)
-
-
-@sv.on_fullmatch(('jjc', 'JJC', 'JJC作业', 'JJC作业网', 'JJC数据库', 'jjc作业', 'jjc作业网', 'jjc数据库'))
+@sv.on_rex(r'^jjc((作业(网)?)|数据库)?$')
 async def say_arina_database(bot, ev):
-    await bot.send(ev, '公主连接Re:Dive 竞技场编成数据库\n日文：https://nomae.net/arenadb \n中文：https://pcrdfans.com/battle')
+    await bot.send(ev, '''公主连接Re:Dive 竞技场编成数据库
+日文：https://nomae.net/arenadb
+中文：https://pcrdfans.com/battle''')
 
 
-OTHER_KEYWORDS = '【日rank】【台rank】【b服rank】【jjc作业网】【黄骑充电表】【一个顶俩】'
+OTHER_KEYWORDS = '''【日rank】【台rank】【b服rank】【jjc作业网】
+【黄骑充电表】【一个顶俩】【多目标boss机制】【pcr公式】'''
 PCR_SITES = f'''
 【繁中wiki/兰德索尔图书馆】pcredivewiki.tw
+【体力规划工具/可可萝笔记】https://kokkoro-notes.lolita.id/#
+【刷图规划工具/quest-helper】https://expugn.github.io/priconne-quest-helper/
 【日文wiki/GameWith】gamewith.jp/pricone-re
 【日文wiki/AppMedia】appmedia.jp/priconne-redive
 【竞技场作业库(中文)】pcrdfans.com/battle
@@ -74,6 +27,8 @@ PCR_SITES = f'''
 【台服卡池千里眼】bbs.nga.cn/read.php?tid=16986067
 【日官网】priconne-redive.jp
 【台官网】www.princessconnect.so-net.tw
+【pcr美术资源】https://redive.estertion.win/
+【pc美术资源】priconestory.nekonikoban.org
 
 ===其他查询关键词===
 {OTHER_KEYWORDS}
@@ -94,17 +49,40 @@ BCR_SITES = f'''
 {OTHER_KEYWORDS}
 ※日台服速查请输入【pcr速查】'''
 
+
 @sv.on_fullmatch(('pcr速查', 'pcr图书馆', '图书馆'))
 async def pcr_sites(bot, ev: CQEvent):
     await bot.send(ev, PCR_SITES, at_sender=True)
     await util.silence(ev, 60)
+
+
 @sv.on_fullmatch(('bcr速查', 'bcr攻略'))
 async def bcr_sites(bot, ev: CQEvent):
     await bot.send(ev, BCR_SITES, at_sender=True)
     await util.silence(ev, 60)
 
 
-YUKARI_SHEET_ALIAS = map(lambda x: ''.join(x), itertools.product(('黄骑', '酒鬼'), ('充电', '充电表', '充能', '充能表')))
+@sv.on_rex(r'^(兰德索尔|pcr)?(年龄|胸围|学业|胸部|岁数|欧派|大小)(统计|分布|表)表?$', only_to_me=True)
+async def pcrfenbubiao(bot, ev):
+    match = ev['match']
+    is_n = match.group(2) in '年龄岁数'
+    is_x = match.group(2) in '胸围胸部欧派大小'
+    is_s = match.group(2) == '学业'
+    if is_n:
+        await bot.send(ev, R.img('priconne/tips/pcrnianlingbiao.jpg').cqcode)
+    elif is_x:
+        await bot.send(ev, R.img('priconne/tips/xiongwei.png').cqcode)
+    elif is_s:
+        await bot.send(ev, R.img('priconne/tips/xueniantuice.jpg').cqcode)
+
+
+@sv.on_fullmatch(('furry', 'furry分级', '喜欢羊驼很怪吗', '喜欢羊驼有多怪'), only_to_me=True)
+async def furryrank(bot, ev):
+    await bot.send(ev, R.img('priconne/tips/furry.jpg').cqcode)
+
+
+YUKARI_SHEET_ALIAS = map(lambda x: ''.join(x), itertools.product(
+    ('黄骑', '酒鬼'), ('充电', '充电表', '充能', '充能表')))
 YUKARI_SHEET = f'''
 {R.img('priconne/quick/黄骑充电.jpg').cqcode}
 ※大圈是1动充电对象 PvP测试
@@ -112,6 +90,8 @@ YUKARI_SHEET = f'''
 ※对面羊驼或中后卫坦 有可能歪
 ※我方羊驼算一号位
 ※图片搬运自漪夢奈特'''
+
+
 @sv.on_fullmatch(YUKARI_SHEET_ALIAS)
 async def yukari_sheet(bot, ev):
     await bot.send(ev, YUKARI_SHEET, at_sender=True)
@@ -123,7 +103,57 @@ DRAGON_TOOL = f'''
 龍的探索者們小遊戲單字表 https://hanshino.nctu.me/online/KyaruMiniGame
 镜像 https://hoshino.monster/KyaruMiniGame
 网站内有全词条和搜索，或需科学上网'''
+
+
 @sv.on_fullmatch(('一个顶俩', '拼音接龙', '韵母接龙'))
 async def dragon(bot, ev):
     await bot.send(ev, DRAGON_TOOL, at_sender=True)
     await util.silence(ev, 60)
+
+
+Duomubiao = R.data('priconne/query/duomubiao.json', 'json')
+Duomubiaopic = R.img('priconne/tips/duomubiao.jpg').cqcode
+
+
+@sv.on_fullmatch(('多目标boss机制文字'), only_to_me=True)
+async def duomubiao(bot, ev):
+    msg = Duomubiao.read
+    await bot.send(ev, '\n'.join(msg), at_sender=True)
+    await util.silence(ev, 60*5)
+
+
+Duomubiaourl = f'''
+{Duomubiaopic}
+原文来自https://ngabbs.com/read.php?tid=18623761
+不想看图不想开浏览器不怕刷屏也可以发送#多目标boss机制文字
+===其他查询关键词===
+{OTHER_KEYWORDS}
+※日台服速查请输入【pcr速查】'''
+
+
+@sv.on_fullmatch(('多目标boss机制', '多目标boss'), only_to_me=True)
+async def duomubiaourl(bot, ev):
+    await bot.send(ev, Duomubiaourl, at_sender=True)
+
+
+otherk = [
+    "===其他查询关键词===",
+    f"{OTHER_KEYWORDS}",
+    "※日台服速查请输入【pcr速查】"]
+
+pcrFORMULA = R.data('priconne/query/FORMULA.json', 'json')
+
+
+@sv.on_prefix(('pcr公式'), only_to_me=True)
+async def pcrgongshi(bot, ev):
+    keyword = ev.message.extract_plain_text()
+    if not keyword:
+        msg = pcrFORMULA.read["pcrFORMULA"]['pcrgshelp'] + otherk
+        await bot.send(ev, '\n'.join(msg), at_sender=True)
+    else:
+        msg = pcrFORMULA.read["pcrFORMULA"].get(keyword)
+        if msg is not None:
+            msg = '\n'.join(msg)
+            await bot.send(ev, msg)
+        else:
+            pass

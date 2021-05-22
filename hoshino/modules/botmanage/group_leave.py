@@ -2,6 +2,7 @@ import re
 from hoshino import sucmd
 from hoshino.typing import CommandSession
 
+
 @sucmd('quit', aliases=('退群',))
 async def quit_group(session: CommandSession):
     args = session.current_arg_text.split()
@@ -12,9 +13,10 @@ async def quit_group(session: CommandSession):
             failed.append(arg)
             continue
         try:
-            await session.bot.set_group_leave(self_id=session.event.self_id, group_id=arg)
+            await session.bot.set_group_leave(
+                self_id=session.event.self_id, group_id=arg)
             succ.append(arg)
-        except:
+        except Exception:
             failed.append(arg)
     msg = f'已尝试退出{len(succ)}个群'
     if failed:

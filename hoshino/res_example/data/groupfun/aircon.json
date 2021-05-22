@@ -1,0 +1,14 @@
+{
+  "0": {
+    "is_on": true,
+    "env_temp": 0,
+    "now_temp": 0,
+    "set_temp": 0,
+    "last_update": 0,
+    "volume": 0,
+    "wind_rate": 2,
+    "balance": 0,
+    "ac_type": 0,
+    "stats": "☀"
+  }
+}

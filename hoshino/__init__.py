@@ -8,7 +8,7 @@ from nonebot.message import CanceledException
 from .log import new_logger
 from . import config
 
-__version__ = '2.1.0'
+__version__ = 'Kokkoro Edition 1.0.0'
 
 _bot = None
 HoshinoBot = nonebot.NoneBot
@@ -51,5 +51,5 @@ def get_self_ids():
     return _bot._wsr_api_clients.keys()
 
 
-from . import R
-from .service import Service, sucmd, priv
+from . import R, C
+from .service import Service, sucmd, priv, SubService
