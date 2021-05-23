@@ -39,11 +39,11 @@
     },
     "TW": {
         "fes":false,
-        "prize":false,
+        "prize":true,
         "up_prob":   7,
 	    "s3_prob":  25,
         "s2_prob": 180,
-        "up": ["贪吃佩可(新年)"],
+        "up": ["优衣(新年)", "日和(新年)"],
         "_comment": "star3 仅填3星常驻角色。不要填UP角，否则出率会偏高",
         "star3_f":[],
         "star3": [
