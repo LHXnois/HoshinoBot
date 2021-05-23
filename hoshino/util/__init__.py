@@ -320,3 +320,14 @@ async def chain_replay(bot, ev, msgchain, gened=True):
         await bot.send_group_forward_msg(
             group_id=gid,
             messages=chain)
+
+
+async def botdebuginfo(info):
+    bot = hoshino.get_bot()
+    try:
+        debuggroup = bot.config.DEBUGGROUP[0]
+        assert debuggroup
+        await bot.send_group_msg(group_id=debuggroup, message=info)
+    except Exception:
+        master = bot.config.SUPERUSERS[0]
+        await bot.send_private_msg(user_id=master, message=info)

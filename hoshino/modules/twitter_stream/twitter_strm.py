@@ -1,5 +1,6 @@
 import asyncio
 import os
+from posixpath import split
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -13,6 +14,7 @@ from hoshino.service import sucmd
 from hoshino.config import twitter as cfg
 from hoshino.config import Proxies
 from hoshino.typing import MessageSegment as ms
+from hoshino.typing import CommandSession, CQEvent
 from peony import PeonyClient
 from itertools import chain
 try:
@@ -130,9 +132,7 @@ class UserIdCache:
                     user = await client.api.users.show.get(screen_name=i)
                 except Exception as e:
                     error_name.append(i)
-                    await hoshino.get_bot().send_private_msg(
-                        user_id=hoshino.config.SUPERUSERS[0],
-                        message=f'推特添加订阅{i}时出现问题{e}')
+                    await util.botdebuginfo(f'推特添加订阅{i}时出现问题{e}')
                 else:
                     self.cache[i] = user.id
         follow_ids = [self.cache[i]
@@ -200,6 +200,7 @@ async def open_stream(client: PeonyClient):
     #                   screen_name=i)).id for i in router.follows]
     follow_ids = await user_id_cache.convert(client, router.follows)
     sv.logger.info(f"订阅推主={router.follows.keys()}, {follow_ids=}")
+    await util.botdebuginfo(f'twitter_stream已启动！关注数{len(follow_ids)}')
     stream = client.stream.statuses.filter.post(follow=follow_ids)
     async with stream:
         async for tweet in stream:
@@ -249,24 +250,27 @@ async def open_stream(client: PeonyClient):
 
 
 @sv.on_prefix('推特订阅', only_to_me=True)
-async def addfollow(bot, ev):
-    kw = ev.message.extract_plain_text().strip()
-    if not kw:
-        return
-    if kw in router.follows:
-        sve = (i.name for i in router.follows[kw].services)
-        await bot.finish(ev, f'订阅已存在于{list(sve)}')
-    router.add(sv_lhx_fav, [kw])
-    router.set_media_only(kw)
-    lhx_fav.append(kw)
-    lhx_fav.sort()
-    R.data('twitter/lhx_fav.json', 'json').write(lhx_fav)
-    await bot.send(ev, '订阅成功')
-    router.needrestart = True
+async def addfollow(bot, ev: CQEvent):
+    kw = ev.message.extract_plain_text().strip().split()
+    count = 0
+    for i in kw:
+        if kw in router.follows:
+            sve = (i.name for i in router.follows[kw].services)
+            await bot.send(ev, f'{i}已存在订阅于{list(sve)}')
+            continue
+        router.add(sv_lhx_fav, [kw])
+        router.set_media_only(kw)
+        lhx_fav.append(kw)
+        count += 1
+    if count:
+        lhx_fav.sort()
+        R.data('twitter/lhx_fav.json', 'json').write(lhx_fav)
+        await bot.send(ev, '订阅成功')
+        router.needrestart = True
 
 
 @sv.on_prefix('取消推特订阅', only_to_me=True)
-async def disaddfollow(bot, ev):
+async def disaddfollow(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     if not kw:
         return
@@ -282,3 +286,21 @@ async def disaddfollow(bot, ev):
         databin.write(databin.read+[kw])
     await bot.send(ev, '取消成功')
     router.needrestart = True
+
+
+@sucmd('重载推特订阅', force_private=False)
+async def reloadfollow(session: CommandSession):
+    lhx_fav_data = R.data('twitter/lhx_fav.json', 'json')
+    if not lhx_fav_data.exist:
+        await session.finish('找不到lhx_fav.json')
+    global lhx_fav
+    lhx_fav_new = list(set(lhx_fav_data.read).difference(
+        set(moe_artist+coffee_fav+depress_artist)))
+    nofollow = list(set(lhx_fav).difference(set(lhx_fav_new)))
+    if nofollow:
+        list(map(router.follows.pop, nofollow))
+    lhx_fav = lhx_fav_new
+    router.add(sv_lhx_fav, lhx_fav)
+    list(map(router.set_media_only, lhx_fav))
+    router.needrestart = True
+    await session.send('已重载')
