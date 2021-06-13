@@ -1,9 +1,10 @@
 import os
+from posixpath import split
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
 from nonebot import MessageSegment
-from PIL import Image, ImageFont, ImageDraw
+from PIL import Image, ImageFont, ImageDraw, ImageFilter
 
 import hoshino
 from hoshino import util, aiorequests
@@ -23,6 +24,8 @@ class ResObj:
         if not fullpath.startswith(os.path.abspath(res_dir)):
             raise ValueError('Cannot access outside RESOUCE_DIR')
         self.__path = os.path.normpath(res_path)
+        self.filename = self.__path.split('//')[-1]
+        self.suffix = self.__path.split('.')[-1]
 
     @property
     def url(self):
@@ -215,6 +218,19 @@ class TemImg(ResImg):
                 suffix = 'png'
         self.__path = self.__path+'.'+suffix
 
+    def hexie(self):
+        im = self.open()
+        width, height = im.size
+        draw = ImageDraw.Draw(im)
+        draw.point(
+            (random.randint(1, width), random.randint(1, height)),
+            fill=(
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255)
+                ))
+        im.save(self.path)
+
 
 class TemVideo(ResObj):
 
@@ -295,8 +311,21 @@ async def tem_gocqimg(url_path, headers=None, thread_count=1):
     return TemImg(res_path['file'], for_gocq=True)
 
 
-def get_circle_pic(pic: Image, size: int, scale: int = 5) -> Image:
-    pic = pic.resize((size, size))
+def crop_square(img: Image) -> Image:
+    width, height = img.size
+    if width != height:
+        length = min(width, height)
+        return img.crop(((width - length) / 2, (height - length) / 2,
+                        (width + length) / 2, (height + length) / 2))
+    return img
+
+
+def get_circle_pic(pic: Image, size: int = None, scale: int = 5) -> Image:
+    pic = crop_square(pic)
+    if not size:
+        size = pic.size[0]
+    else:
+        pic = pic.resize((size, size))
     mask = Image.new('L', (size*scale, size*scale), 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse((0, 0, size * scale, size * scale), fill=255)
