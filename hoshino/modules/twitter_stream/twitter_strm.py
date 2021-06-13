@@ -200,7 +200,10 @@ async def open_stream(client: PeonyClient):
     #                   screen_name=i)).id for i in router.follows]
     follow_ids = await user_id_cache.convert(client, router.follows)
     sv.logger.info(f"订阅推主={router.follows.keys()}, {follow_ids=}")
-    await util.botdebuginfo(f'twitter_stream已启动！关注数{len(follow_ids)}')
+    try:
+        await util.botdebuginfo(f'twitter_stream已启动！关注数{len(follow_ids)}')
+    except Exception:
+        pass
     stream = client.stream.statuses.filter.post(follow=follow_ids)
     async with stream:
         async for tweet in stream:
@@ -254,13 +257,13 @@ async def addfollow(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip().split()
     count = 0
     for i in kw:
-        if kw in router.follows:
-            sve = (i.name for i in router.follows[kw].services)
+        if i in router.follows:
+            sve = (si.name for si in router.follows[i].services)
             await bot.send(ev, f'{i}已存在订阅于{list(sve)}')
             continue
-        router.add(sv_lhx_fav, [kw])
-        router.set_media_only(kw)
-        lhx_fav.append(kw)
+        router.add(sv_lhx_fav, [i])
+        router.set_media_only(i)
+        lhx_fav.append(i)
         count += 1
     if count:
         lhx_fav.sort()
