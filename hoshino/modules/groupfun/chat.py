@@ -257,7 +257,7 @@ async def chat_wenhao(bot, ev):
     if rtest < 0.1:
         await bot.send(ev, R.img('groupfun/chat', 'taowa/wenhao.jpg').cqcode)
     elif rtest < 0.25:
-        await bot.send(ev, random.choice('?', '？', '¿ '))
+        await bot.send(ev, random.choice(('?', '？', '¿ ')))
     elif rtest < 0.3:
         await bot.send(ev, R.img('groupfun/chat', 'maimeng/wenhao.jpg').cqcode)
     elif rtest < 0.35:
