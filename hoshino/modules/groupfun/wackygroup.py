@@ -1,3 +1,4 @@
+from os import replace
 import random
 import pytz
 from datetime import datetime
@@ -31,6 +32,8 @@ eg:#??pcr''')
 Speak = SubService('speakthis', sv, help_='''[#说xxx] 调用tx朗读接口读xxx''')
 Tail = SubService('gentail', sv, help_='''群名片小尾巴！
 [#我要小尾巴] 后跟想要的小尾巴''')
+Tql = SubService('tal', sv, help_='''tql！
+[#tqlxxx] 讲讲xxx的故事''')
 Wyy = SubService('wyysentence', sv, help_='''到点了，上号！
 [上号/到点了] 每天0-1点限定功能''')
 Yinglish = SubService('yinglish', sv, help_='''淫语翻译机
@@ -216,3 +219,22 @@ async def jiarannogog(bot, ev: CQEvent):
         cont = cont.replace(rlist[i], ki)
         i += 1
     await bot.send(ev, cont)
+
+
+@Answer.on_prefix(('tql'), only_to_me=True)
+async def tql(bot, ev: CQEvent):
+    try:
+        for i in ev.message:
+            if i['type'] == 'at' and i['data']['qq'] != 'all':
+                info = await Gm(ev).member_info(i['data']['qq'])
+                kw = info['card'] or info['nickname']
+                break
+        else:
+            kw = ev.message.extract_plain_text().strip()
+        if not kw:
+            return
+        stories = R.data('groupfun/wackygroup/tql.json', 'json').read
+        stories = random.choice(stories)
+        await bot.send(ev, stories.replace('%name%', kw))
+    except Exception:
+        sv.logger.error('chat_tql读json出错')
