@@ -54,7 +54,7 @@ def measure(msg, font_size, img_width):
     return '\n'.join(measured_msg)
 
 
-@sv.on_prefix(('营销号'), only_to_me=True)
+@sv.on_prefix('营销号', only_to_me=True)
 async def yxh(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     arr = kw.split('/')
@@ -67,7 +67,7 @@ async def yxh(bot, ev: CQEvent):
     await bot.send(ev, msg)
 
 
-@sv.on_prefix(('狗屁不通'), only_to_me=True)
+@sv.on_prefix('狗屁不通', only_to_me=True)
 async def gpbt(bot, ev: CQEvent):
     data = R.data('groupfun/generator/gpbt.json', 'json').read
     title = ev.message.extract_plain_text().strip()
@@ -87,7 +87,7 @@ async def gpbt(bot, ev: CQEvent):
     await bot.send(ev, body)
 
 
-@sv.on_prefix(('记仇'), only_to_me=True)
+@sv.on_prefix('记仇', only_to_me=True)
 async def jc(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     arr = kw.split('/')
@@ -163,7 +163,7 @@ async def friend(bot, ev: CQEvent):
     await bot.send(ev, str(MessageSegment.image(pic2b64(image_back))))
 
 
-@sv.on_keyword(('报时', '几点了', '现在几点', '几点钟啦', '几点啦'), only_to_me=True)
+@sv.on_keyword('报时', '几点了', '现在几点', '几点钟啦', '几点啦', only_to_me=True)
 async def showtime(bot, ev):
     now = datetime.datetime.now()
     hour = now.hour
@@ -176,7 +176,7 @@ async def showtime(bot, ev):
     await bot.send(ev, MessageSegment.image(pic2b64(img)))
 
 
-@sv.on_prefix(('5k', '5K'), only_to_me=True)
+@sv.on_prefix('5k', '5K', only_to_me=True)
 async def _5k(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip().split()
     if len(kw) == 2:
@@ -230,21 +230,18 @@ async def avatargen(bot, ev: CQEvent, type, gif=False, anum=1, **args):
 typelist = {}
 
 
-def avatargenadder(cmd: tuple, **args) -> Callable:
-    if isinstance(cmd, str):
-        cmd = (cmd, )
-
+def avatargenadder(*cmd, **args) -> Callable:
     def deco(func) -> Callable:
         typelist[cmd[0]] = func
 
-        @sv.on_prefix(cmd, only_to_me=True)
+        @sv.on_prefix(*cmd, only_to_me=True)
         async def genfunc(bot, ev: CQEvent):
             await avatargen(bot, ev, cmd[0], **args)
         return func
     return deco
 
 
-@avatargenadder(('狂粉'))
+@avatargenadder('狂粉')
 def kuangfen_gen(avatar: Image) -> Image:
     avatar = R.get_circle_pic(avatar, 101).convert('RGBA')
     base = R.img('groupfun/generator', 'kuangfen.jpg').open()
@@ -252,7 +249,7 @@ def kuangfen_gen(avatar: Image) -> Image:
     return base
 
 
-@avatargenadder(('炖'))
+@avatargenadder('炖')
 def dun_gen(avatar: Image) -> Image:
     avatar_c = R.get_circle_pic(avatar, 110).convert('RGBA')
     base = R.img('groupfun/generator', 'dunu.png').open()
@@ -263,14 +260,14 @@ def dun_gen(avatar: Image) -> Image:
     return base
 
 
-@avatargenadder(('小心'))
+@avatargenadder('小心')
 def xiaoxin_gen(avatar: Image) -> Image:
     base = R.img('groupfun/generator', 'xiaoxin.jpg').open()
     base.paste(avatar.resize((210, 210)), (0, 20))
     return base
 
 
-@avatargenadder(('友情模式'))
+@avatargenadder('友情模式')
 def friend_gen(avatar: Image) -> Image:
     avatar = R.get_circle_pic(avatar, 160)
     mask = R.img('groupfun/generator', 'friend.png').open().resize((160, 160))
@@ -280,7 +277,7 @@ def friend_gen(avatar: Image) -> Image:
     return im
 
 
-@avatargenadder(('撕'))
+@avatargenadder('撕')
 def tear_gen(avatar: Image) -> Image:
     tear = R.img('groupfun/generator', 'tear.png').open()
     frame = Image.new('RGBA', (1080, 804), (255, 255, 255, 0))
@@ -292,7 +289,7 @@ def tear_gen(avatar: Image) -> Image:
     return frame
 
 
-@avatargenadder(('丢'))
+@avatargenadder('丢')
 def throw_gen(avatar: Image) -> Image:
     avatar = R.get_circle_pic(avatar, 143)
     avatar = avatar.rotate(random.randint(1, 360), Image.BICUBIC)
@@ -301,7 +298,7 @@ def throw_gen(avatar: Image) -> Image:
     return throw
 
 
-@avatargenadder(('心灵支柱', '精神支柱'))
+@avatargenadder('心灵支柱', '精神支柱')
 def support_gen(avatar: Image) -> Image:
     support = R.img('groupfun/generator', 'support.png').open()
     frame = Image.new('RGBA', (1293, 1164), (255, 255, 255, 0))
@@ -311,7 +308,7 @@ def support_gen(avatar: Image) -> Image:
     return frame
 
 
-@avatargenadder(('rua', '搓'), gif=True)
+@avatargenadder('rua', '搓', gif=True)
 def rua_gen(avatar_origin: Image) -> MessageSegment:
     avatar_origin = R.get_circle_pic(avatar_origin, 350)
     avatar_size = [(350, 350), (372, 305), (395, 283), (380, 305), (350, 372)]
@@ -340,7 +337,7 @@ def rua_gen(avatar_origin: Image) -> MessageSegment:
     return result.cqcode
 
 
-@avatargenadder(('狂mua'), gif=True, anum=2)
+@avatargenadder('狂mua', gif=True, anum=2)
 def mua_gen(avatar: Image) -> MessageSegment:
     user_locs = [(58, 90), (62, 95), (42, 100), (50, 100), (56, 100), (18, 120),
                  (28, 110), (54, 100), (46, 100), (60, 100), (35, 115), (20, 120), (40, 96)]
@@ -362,7 +359,7 @@ def mua_gen(avatar: Image) -> MessageSegment:
     return result.cqcode
 
 
-@avatargenadder(('狂蹭'), gif=True, anum=2)
+@avatargenadder('狂蹭', gif=True, anum=2)
 def ceng_gen(avatar: Image) -> MessageSegment:
     user_locs = [(39, 91, 75, 75, 0), (49, 101, 75, 75, 0), (67, 98, 75, 75, 0),
                  (55, 86, 75, 75, 0), (61, 109, 75, 75, 0), (65, 101, 75, 75, 0)]

@@ -1,26 +1,46 @@
 import asyncio
+import importlib
 import os
 from posixpath import split
 import re
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Iterable, Set
 
-import hoshino
-import peony
 import pytz
-from hoshino import Service, priv, util, R
+import hoshino
+from hoshino import Service, priv, util, R, sucmd
 from hoshino.service import sucmd
-from hoshino.config import twitter as cfg
-from hoshino.config import Proxies
-from hoshino.typing import MessageSegment as ms
+from hoshino.config import twitter as cfg, Proxies
+from hoshino.typing import MessageSegment as ms, CommandSession
 from hoshino.typing import CommandSession, CQEvent
+
+import peony
 from peony import PeonyClient
-from itertools import chain
+
 try:
     import ujson as json
 except Exception:
     import json
+
+
+sv = Service("twitter-poller", use_priv=priv.SUPERUSER, manage_priv=priv.SUPERUSER, visible=False)
+sv_lhx_fav = Service("lhx-favorite-twitter", help_="蓝红心精选画师推特转发", enable_on_default=False, bundle="artist")
+bot = hoshino.get_bot()
+daemon = None
+follow_collection = [
+    Service("twitter-stream-test", enable_on_default=False, manage_priv=priv.SUPERUSER, visible=False),
+    Service("kc-twitter", help_="艦これ推特转发", enable_on_default=False, bundle="kancolle"),
+    Service("pcr-twitter", help_="日服Twitter转发", enable_on_default=False, bundle="pcr订阅"),
+    Service("uma-twitter", help_="ウマ娘推特转发", enable_on_default=False, bundle="umamusume"),
+    Service("pripri-twitter", help_="番剧《公主代理人》官推转发", enable_on_default=False),
+    Service("coffee-favorite-twitter", help_="咖啡精选画师推特转发", enable_on_default=False, bundle="artist"),
+    Service("moe-artist-twitter", help_="萌系画师推特转发", enable_on_default=False, bundle="artist"),
+    Service("depress-artist-twitter", help_="致郁系画师推特转发", enable_on_default=False, bundle="artist"),
+    sv_lhx_fav,
+    Service('azur-twitter', help_='瓜游Twitter转发', enable_on_default=False, bundle='azur订阅'),
+]
 
 
 @dataclass
@@ -32,86 +52,33 @@ class FollowEntry:
 
 class TweetRouter:
     def __init__(self):
-        self.follows: Dict[str, FollowEntry] = {}
+        self.follows: Dict[str, FollowEntry] = defaultdict(FollowEntry)
         self.needrestart = False
 
     def add(self, service: Service, follow_names: Iterable[str]):
         for f in follow_names:
-            if f not in self.follows:
-                self.follows[f] = FollowEntry()
             self.follows[f].services.add(service)
 
     def set_media_only(self, screen_name, media_only=True):
+        if screen_name not in self.follows:
+            raise KeyError(f"`{screen_name}` not in `TweetRouter.follows`.")
         self.follows[screen_name].media_only = media_only
 
-
-sv = Service("twitter-poller", use_priv=priv.SUPERUSER,
-             manage_priv=priv.SUPERUSER, visible=False)
-sv_kc = Service("kc-twitter", help_="艦これ推特转发",
-                enable_on_default=False, bundle="kancolle")
-sv_pcr = Service("pcr-twitter", help_="日服Twitter转发",
-                 enable_on_default=False, bundle="pcr订阅")
-sv_blhx = Service('azur-twitter', enable_on_default=False,
-                  help_='瓜游Twitter转发', bundle='azur订阅')
-sv_uma = Service("uma-twitter", help_="ウマ娘推特转发",
-                 enable_on_default=False, bundle="umamusume")
-sv_pripri = Service("pripri-twitter", help_="番剧《公主代理人》官推转发",
-                    enable_on_default=False)
-sv_coffee_fav = Service("coffee-favorite-twitter",
-                        help_="咖啡精选画师推特转发",
-                        enable_on_default=False, bundle="artist")
-sv_lhx_fav = Service("lhx-favorite-twitter", help_="蓝红心精选画师推特转发",
-                     enable_on_default=False, bundle="artist")
-sv_moe_artist = Service("moe-artist-twitter", help_="萌系画师推特转发",
-                        enable_on_default=False, bundle="artist")
-sv_depress_artist = Service(
-    "depress-artist-twitter",
-    help_="致郁系画师推特转发", enable_on_default=False, bundle="artist")
-sv_test = Service("twitter-stream-test", enable_on_default=False,
-                  manage_priv=priv.SUPERUSER, visible=False)
-
-router = TweetRouter()
-router.add(sv_kc, ["ywwuyi"])
-router.add(sv_pcr, ["priconne_redive", "priconne_anime"])
-router.add(sv_blhx, ['azurlane_staff', 'azurlane_bisoku'])
-# router.add(sv_pripri, ["pripri_anime"])
-router.add(sv_uma, ["uma_musu", "uma_musu_anime"])
-router.add(sv_test, ["LHXnois"])
-
-depress_artist = ["tkmiz"]
-coffee_fav = ["shiratamacaron", "k_yuizaki",
-              "suzukitoto0323", "usagicandy_taku"]
-moe_artist = [
-    "koma_momozu", "santamatsuri", "panno_mimi", "suimya", "Anmi_", "mamgon",
-    "kazukiadumi", "Setmen_uU", "bakuPA", "kantoku_5th", "done_kanda",
-    "siragagaga", "fuzichoco", "miyu_miyasaka", "naco_miyasaka", "tsukimi08",
-    "tsubakininiwawa", "_Dan_ball", "ominaeshin", "gomalio_y", "izumiyuhina",
-    "1kurusk", "amsrntk3", "kani_biimu", "Nakkar7", "li_hongbo", "nahaki_401",
-    "ukiukisoda", "yukkieeeeeen", "riko0202", "hoshi_u3",
-]
-lhx_fav = R.data('twitter/lhx_fav.json', 'json')
-if not lhx_fav.exist:
-    lhx_fav.write([])
-lhx_fav = list(set(lhx_fav.read).difference(
-    set(moe_artist+coffee_fav+depress_artist)))
-
-
-router.add(sv_coffee_fav, coffee_fav)
-router.add(sv_moe_artist, moe_artist)
-router.add(sv_depress_artist, depress_artist)
-router.add(sv_lhx_fav, lhx_fav)
-for i in chain(coffee_fav, moe_artist, depress_artist, lhx_fav):
-    router.set_media_only(i)
+    def load(self, service_follow_dict, media_only_users):
+        for s in follow_collection:
+            self.add(s, service_follow_dict[s.name])
+        for x in media_only_users:
+            self.set_media_only(x)
 
 
 class UserIdCache:
-    _cache_file = os.path.expanduser('~/.hoshino/twitter_uid_cache.json')
+    _cache_file = os.path.expanduser("~/.hoshino/twitter_uid_cache.json")
 
     def __init__(self) -> None:
         self.cache = {}
         if os.path.isfile(self._cache_file):
             try:
-                with open(self._cache_file, 'r', encoding='utf8') as f:
+                with open(self._cache_file, "r", encoding="utf8") as f:
                     self.cache = json.load(f)
             except Exception as e:
                 sv.logger.exception(e)
@@ -142,6 +109,16 @@ class UserIdCache:
         return follow_ids
 
 
+@dataclass
+class Twittermaster:
+    client: PeonyClient = None
+    router: TweetRouter = None
+    user_id_cache: UserIdCache = None
+
+
+Tm = Twittermaster()
+
+
 def format_time(time_str):
     dt = datetime.strptime(time_str, r"%a %b %d %H:%M:%S %z %Y")
     dt = dt.astimezone(pytz.timezone("Asia/Shanghai"))
@@ -163,26 +140,25 @@ def format_tweet(tweet):
     return msg
 
 
-bot = hoshino.get_bot()
-
-
 @bot.on_startup
 async def start_daemon():
+    global daemon
     loop = asyncio.get_event_loop()
-    loop.create_task(twitter_stream_daemon())
+    daemon = loop.create_task(twitter_stream_daemon())
 
 
 async def twitter_stream_daemon():
-    client = PeonyClient(consumer_key=cfg.consumer_key,
-                         consumer_secret=cfg.consumer_secret,
-                         access_token=cfg.access_token_key,
-                         access_token_secret=cfg.access_token_secret,
-                         proxy=Proxies['http'])
-    async with client:
+    Tm.client = PeonyClient(consumer_key=cfg.consumer_key,
+                            consumer_secret=cfg.consumer_secret,
+                            access_token=cfg.access_token_key,
+                            access_token_secret=cfg.access_token_secret,
+                            proxy=Proxies['http'])
+    async with Tm.client:
         while True:
             try:
-                await open_stream(client)
-            except KeyboardInterrupt:
+                await open_stream(Tm.client)
+            except (KeyboardInterrupt, asyncio.CancelledError):
+                sv.logger.info("Twitter stream daemon exited.")
                 return
             except Exception as e:
                 sv.logger.exception(e)
@@ -192,13 +168,12 @@ async def twitter_stream_daemon():
                 await asyncio.sleep(5)
 
 
-user_id_cache = UserIdCache()
-
-
 async def open_stream(client: PeonyClient):
-    # follow_ids = [(await client.api.users.show.get(
-    #                   screen_name=i)).id for i in router.follows]
-    follow_ids = await user_id_cache.convert(client, router.follows)
+    Tm.router = TweetRouter()
+    router = Tm.router
+    router.load(cfg.follows, cfg.media_only_users)
+    Tm.user_id_cache = UserIdCache()
+    follow_ids = await Tm.user_id_cache.convert(client, router.follows)
     sv.logger.info(f"订阅推主={router.follows.keys()}, {follow_ids=}")
     try:
         await util.botdebuginfo(f'twitter_stream已启动！关注数{len(follow_ids)}')
@@ -215,18 +190,18 @@ async def open_stream(client: PeonyClient):
                     continue    # 推主不在订阅列表
                 if peony.events.retweet(tweet):
                     continue    # 忽略纯转推
-                reply_to = tweet.get('in_reply_to_screen_name')
+                reply_to = tweet.get("in_reply_to_screen_name")
                 if reply_to and reply_to != screen_name:
                     continue    # 忽略对他人的评论，保留自评论
 
                 entry = router.follows[screen_name]
-                media = tweet.get('extended_entities', {}).get('media', [])
+                media = tweet.get("extended_entities", {}).get("media", [])
                 if entry.media_only and not media:
                     continue    # 无附带媒体，订阅选项media_only=True时忽略
 
                 msg = format_tweet(tweet)
 
-                if 'quoted_status' in tweet:
+                if "quoted_status" in tweet:
                     quoted_msg = format_tweet(tweet.quoted_status)
                     msg = f"{msg}\n\n>>>>>\n{quoted_msg}"
 
@@ -243,7 +218,7 @@ async def open_stream(client: PeonyClient):
 
                 sv.logger.info(f"推送推文：\n{msg}")
                 for s in entry.services:
-                    await s.broadcast(msg, f' @{screen_name} 推文', 0.3)
+                    await s.broadcast(msg, f" @{screen_name} 推文", 0.2)
 
             else:
                 sv.logger.debug("Ignore non-tweet event.")
@@ -256,18 +231,24 @@ async def open_stream(client: PeonyClient):
 async def addfollow(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip().split()
     count = 0
+    router = Tm.router
     for i in kw:
         if i in router.follows:
             sve = (si.name for si in router.follows[i].services)
             await bot.send(ev, f'{i}已存在订阅于{list(sve)}')
             continue
+        try:
+            await Tm.client.api.users.show.get(screen_name=i)
+        except Exception as e:
+            await util.botdebuginfo(f'推特添加订阅{i}时出现问题{e}')
+            continue
         router.add(sv_lhx_fav, [i])
         router.set_media_only(i)
-        lhx_fav.append(i)
+        cfg.follows["lhx-favorite-twitter"].append(i)
         count += 1
     if count:
-        lhx_fav.sort()
-        R.data('twitter/lhx_fav.json', 'json').write(lhx_fav)
+        cfg.follows["lhx-favorite-twitter"].sort()
+        cfg.lhx_fav.write(cfg.follows["lhx-favorite-twitter"])
         await bot.send(ev, '订阅成功')
         router.needrestart = True
 
@@ -277,11 +258,12 @@ async def disaddfollow(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     if not kw:
         return
-    if kw not in lhx_fav:
+    if kw not in cfg.follows["lhx-favorite-twitter"]:
         await bot.finish(ev, '不存在或不能取消的订阅')
+    router = Tm.router
     router.follows.pop(kw)
-    lhx_fav.remove(kw)
-    R.data('twitter/lhx_fav.json', 'json').write(lhx_fav)
+    cfg.follows["lhx-favorite-twitter"].remove(kw)
+    cfg.lhx_fav.write(cfg.follows["lhx-favorite-twitter"])
     databin = R.data('twitter/lhx_fav_bin.json', 'json')
     if not databin.exist:
         databin.write([kw])
@@ -294,16 +276,32 @@ async def disaddfollow(bot, ev: CQEvent):
 @sucmd('重载推特订阅', force_private=False)
 async def reloadfollow(session: CommandSession):
     lhx_fav_data = R.data('twitter/lhx_fav.json', 'json')
+
     if not lhx_fav_data.exist:
         await session.finish('找不到lhx_fav.json')
-    global lhx_fav
-    lhx_fav_new = list(set(lhx_fav_data.read).difference(
-        set(moe_artist+coffee_fav+depress_artist)))
-    nofollow = list(set(lhx_fav).difference(set(lhx_fav_new)))
+    router = Tm.router
+    lhx_fav_new = list(set(cfg.lhx_fav.read).difference(
+        set(cfg.follows["moe-artist-twitter"] +
+            cfg.follows["coffee-favorite-twitter"] +
+            cfg.follows["depress-artist-twitter"])
+    ))
+    nofollow = list(set(cfg.follows["lhx-favorite-twitter"]).difference(set(lhx_fav_new)))
     if nofollow:
         list(map(router.follows.pop, nofollow))
-    lhx_fav = lhx_fav_new
-    router.add(sv_lhx_fav, lhx_fav)
-    list(map(router.set_media_only, lhx_fav))
+    cfg.follows["lhx-favorite-twitter"] = lhx_fav_new
+    router.add(sv_lhx_fav, cfg.follows["lhx-favorite-twitter"])
+    list(map(router.set_media_only, cfg.follows["lhx-favorite-twitter"]))
     router.needrestart = True
     await session.send('已重载')
+
+
+@sucmd("reload-twitter-stream-daemon", force_private=False, aliases=("重启转推", "重载转推"))
+async def reload_twitter_stream_daemon(session: CommandSession):
+    try:
+        daemon.cancel()
+        importlib.reload(cfg)
+        await start_daemon()
+        await session.send('ok')
+    except Exception as e:
+        sv.logger.exception(e)
+        await session.send(f'Error: {type(e)}')

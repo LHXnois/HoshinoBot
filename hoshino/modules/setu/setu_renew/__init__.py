@@ -303,7 +303,7 @@ async def send_ranking(bot, ev):
     await bot.send(ev, msg)
 
 
-@sv.on_prefix(('看涩图', '看色图', '看瑟图'))
+@sv.on_prefix('看涩图', '看色图', '看瑟图')
 async def send_ranking_setu(bot, ev):
     uid = ev['user_id']
     gid = ev['group_id']

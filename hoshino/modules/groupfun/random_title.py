@@ -45,7 +45,7 @@ async def random_title(bot, ev):
     )
 
 
-@sv.on_prefix(('申请头衔', '我想要头衔', '想要头衔'), only_to_me=True)
+@sv.on_prefix('申请头衔', '我想要头衔', '想要头衔', only_to_me=True)
 async def set_title(bot, ev):
     user_id = ev.user_id
     if pohaicheck(ev.group_id, user_id):
@@ -60,7 +60,7 @@ async def set_title(bot, ev):
     )
 
 
-@sv.on_prefix(('设置迫害头衔', '迫害头衔'), only_to_me=True)  # 设置头衔并加入迫害列表
+@sv.on_prefix('设置迫害头衔', '迫害头衔', only_to_me=True)  # 设置头衔并加入迫害列表
 async def suset_title(bot, ev):
     if not priv.check_priv(ev, priv.PYUSER):  # master限定
         return
@@ -75,7 +75,7 @@ async def suset_title(bot, ev):
             pohaiadd(ev.group_id, uid)
 
 
-@sv.on_prefix(('不迫害', '不再迫害'), only_to_me=True)
+@sv.on_prefix('不迫害', '不再迫害', only_to_me=True)
 async def no_pohai(bot, ev):
     if not priv.check_priv(ev, priv.PYUSER):  # master限定
         return

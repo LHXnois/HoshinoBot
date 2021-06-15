@@ -331,3 +331,12 @@ async def botdebuginfo(info):
     except Exception:
         master = bot.config.SUPERUSERS[0]
         await bot.send_private_msg(user_id=master, message=info)
+
+
+def render_list(lines, prompt="") -> str:
+    n = len(lines)
+    if n == 0:
+        return prompt
+    if n == 1:
+        return prompt + "\n┗" + lines[0]
+    return prompt + "\n┣" + "\n┣".join(lines[:-1]) + "\n┗" + lines[-1]

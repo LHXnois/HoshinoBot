@@ -175,7 +175,7 @@ async def addGUQA(bot, ev: CQEvent):
     groupuserQ[gid][uid].add(Qu)
 
 
-@sv.on_prefix(('我问', '我说'))
+@sv.on_prefix('我问', '我说')
 async def addUQA(bot, ev: CQEvent):
     uid = ev.user_id
     cacheinit(ev.group_id, uid)
@@ -183,7 +183,7 @@ async def addUQA(bot, ev: CQEvent):
     userQ[uid].add(Qu)
 
 
-@sv.on_prefix(('有人问', '大家问'))
+@sv.on_prefix('有人问', '大家问')
 async def addGQA(bot, ev: CQEvent):
     if not priv.check_priv(ev, priv.ADMIN):
         await bot.finish(ev, '管理员才能使用有人问哦')
@@ -200,7 +200,7 @@ async def addAQA(bot, ev: CQEvent):
         globalQ.add(Qu)
 
 
-@sv.on_prefix(('不要回答', '删除问答'))
+@sv.on_prefix('不要回答', '删除问答')
 async def delQA(bot, ev: CQEvent):
     Qu = await stor_pic(str(ev.message), False)
     gid = ev.group_id
@@ -217,7 +217,7 @@ async def delQA(bot, ev: CQEvent):
         await delqa(bot, ev, Qu, gid, uid)
 
 
-@sv.on_fullmatch(('看看有人问'))
+@sv.on_fullmatch('看看有人问')
 async def lookgQA(bot, ev: CQEvent):
     cacheinit(ev.group_id, ev.user_id)
     Qlist = globalQ.union(groupQ[ev.group_id])
@@ -225,7 +225,7 @@ async def lookgQA(bot, ev: CQEvent):
     await bot.send(ev, '本群的问题有：\n'+Qlist)
 
 
-@sv.on_fullmatch(('看看我问'))
+@sv.on_fullmatch('看看我问')
 async def lookuQA(bot, ev: CQEvent):
     uid = ev.user_id
     gid = ev.group_id

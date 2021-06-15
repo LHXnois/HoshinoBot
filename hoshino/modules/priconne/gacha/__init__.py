@@ -4,7 +4,6 @@ from collections import defaultdict
 from PIL import Image
 
 from hoshino import Service, priv, util, R
-import hoshino
 from hoshino.typing import CQEvent, MessageSegment
 from hoshino.util import DailyNumberLimiter, concat_pic, pic2b64, silence
 
@@ -67,11 +66,11 @@ gacha_1_aliases = ('单抽', '单抽！', '来发单抽', '来个单抽', '来�
 gacha_200_aliases = ('抽一井', '来一井', '来发井', '抽发井', '天井扭蛋', '扭蛋天井')
 
 
-@sv.on_prefix(('卡池资讯', '查看卡池', '看看卡池', '康康卡池', '看看up', '看看UP'))
+@sv.on_prefix('卡池资讯', '查看卡池', '看看卡池', '康康卡池', '看看up', '看看UP')
 async def gacha_info(bot, ev: CQEvent):
     pool = await set_my_pool(bot, ev)
     gid = str(ev.group_id)
-    gacha = Gacha(ev.user_id, pool)#_group_pool[gid])
+    gacha = Gacha(ev.user_id, pool)  # _group_pool[gid])
     up_chara = gacha.up
     up_chara = map(lambda x: str(chara.fromname(
         x, star=3).icon.cqcode) + x, up_chara)
@@ -82,7 +81,7 @@ async def gacha_info(bot, ev: CQEvent):
 POOL_NAME_TIP = '请选择以下卡池\n> 切换卡池jp\n> 切换卡池tw\n> 切换卡池b\n> 切换卡池mix'
 
 
-@sv.on_prefix(('切换卡池', '选择卡池'))
+@sv.on_prefix('切换卡池', '选择卡池')
 async def set_pool(bot, ev: CQEvent):
     if not priv.check_priv(ev, priv.ADMIN):
         await bot.finish(ev, '只有群管理才能切换卡池', at_sender=True)
@@ -186,7 +185,8 @@ def get_gachares_info(uid: int, result: dict, gtype: int, res: Image,
                     msg.append(f'抽到了！好耶！\n第{fup}抽到{ifnew}up角色！，花费{fup*150}宝石')
                 else:
                     cost = result['cost']
-                    msg.append(f'歪了！坏耶！\n第{fup}首次歪到up角色！抽了{cost}发也没抽到新的，花费{cost*150}宝石')
+                    msg.append(
+                        f'歪了！坏耶！\n第{fup}首次歪到up角色！抽了{cost}发也没抽到新的，花费{cost*150}宝石')
             else:
                 msg.append(f"沉船了...呜呜呜...\n抽了{fup}发，花费{fup*150}宝石")
     if result['prize']:
@@ -313,7 +313,7 @@ async def gacha_10(bot, ev: CQEvent):
     await bot.send(ev, '少女祈祷中...')
     gid = str(ev.group_id)
     uid = ev.user_id
-    gacha = Gacha(uid, pool)#_group_pool[gid])
+    gacha = Gacha(uid, pool)  # _group_pool[gid])
     resultdic = gacha.gacha_ten()
     result = resultdic['chara']
 
@@ -346,7 +346,7 @@ async def gacha_200(bot, ev: CQEvent):
 
     gid = str(ev.group_id)
     uid = ev.user_id
-    gacha = Gacha(uid, pool)#_group_pool[gid])
+    gacha = Gacha(uid, pool)  # _group_pool[gid])
     await bot.send(ev, '少女祈祷中...')
     result = gacha.gacha_tenjou()
     res = result['chara']
@@ -378,12 +378,13 @@ async def allin(bot, ev: CQEvent):
     await check_if_fail(bot, ev, 0.03)
     pool = await set_my_pool(bot, ev)
 
-    gacha = Gacha(uid, pool)#_group_pool[gid])
+    gacha = Gacha(uid, pool)  # _group_pool[gid])
 
     await bot.send(ev, '正在抽干家底...')
     num = min(pcrCoins(uid, '宝石').cnum // 150, 200)
     result = gacha.gacha_tenjou(num, True)
-    gachatimes = min(num, result["first_up_pos"] if 'cost' not in result else result['cost'])
+    gachatimes = min(num, result["first_up_pos"]
+                     if 'cost' not in result else result['cost'])
     pcrCoins(uid, '宝石').red_C(gachatimes*150)
     res = result['chara']
     lenth = len(res)
@@ -424,7 +425,7 @@ async def kakin(bot, ev: CQEvent):
         await bot.send(ev, f"已为{count}位用户充值完毕！谢谢惠顾～")
 
 
-@sv.on_fullmatch(('pcr仓库', 'pcrbox'))
+@sv.on_fullmatch('pcr仓库', 'pcrbox')
 async def lookbox(bot, ev: CQEvent):
     uid = ev.user_id
     eclist = pcrCharas(uid).get_exist_C()

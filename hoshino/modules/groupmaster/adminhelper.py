@@ -24,7 +24,7 @@ sv = Service('adminhelper',
 [#设置群名xxx] 设置群名为xxx
 [#发公告xxx] 发公告xxx''')
 
-@sv.on_prefix(('设置管理员', '戴帽子'), only_to_me=True)
+@sv.on_prefix('设置管理员', '戴帽子', only_to_me=True)
 async def set_admin(bot, ev: CQEvent):
     if not priv.check_priv(ev, priv.PYUSER):
         await bot.finish(ev, '权限不够哦', at_sender=True)
@@ -35,7 +35,7 @@ async def set_admin(bot, ev: CQEvent):
     await bot.send(ev, '帽子戴好啦~')
 
 
-@sv.on_prefix(('撤销管理员', '摘帽子'), only_to_me=True)
+@sv.on_prefix('撤销管理员', '摘帽子', only_to_me=True)
 async def drop_admin(bot, ev: CQEvent):
     if not priv.check_priv(ev, priv.PYUSER):
         await bot.finish(ev, '权限不够哦', at_sender=True)
@@ -46,7 +46,7 @@ async def drop_admin(bot, ev: CQEvent):
     await bot.send(ev, '帽子摘好啦~')
 
 
-@sv.on_prefix(('设置头衔',), only_to_me=True)
+@sv.on_prefix('设置头衔', only_to_me=True)
 async def set_title(bot, ev):
     if not priv.check_priv(ev, priv.PYUSER):
         await bot.finish(ev, '权限不够哦', at_sender=True)
@@ -59,8 +59,8 @@ async def set_title(bot, ev):
                 await bot.finish(ev, '在下好像不是群主呢...', at_sender=True)
 
 ready_kick_group = {1111: {'test': []}}
-@sv.on_prefix(('飞机票', '飞了他', '踢了他'))
-async def kick_member(bot, ev:CQEvent):
+@sv.on_prefix('飞机票', '飞了他', '踢了他')
+async def kick_member(bot, ev: CQEvent):
     kicklist = []
     gid = ev.group_id
     Gmaster = Gm(ev)
@@ -106,7 +106,7 @@ def timeget(time: int, unit: str) -> int:
     return time
 
 
-@sv.on_prefix(('塞口球', '口他'), only_to_me=True)
+@sv.on_prefix('塞口球', '口他', only_to_me=True)
 async def must_sleep(bot, ev):
     msg = str(ev.message)
     matchObj = re.match(r'^\[CQ:at,qq=([0-9]+)\] +([0-9]+)?个?小?([月星周zZ时分秒HMSDhmsd天]?)钟?期?$', msg)
@@ -129,7 +129,7 @@ async def must_sleep(bot, ev):
             sv.logger.exception(e)
 
 
-@sv.on_prefix(('摘口球', '解禁'), only_to_me=True)
+@sv.on_prefix('摘口球', '解禁', only_to_me=True)
 async def dont_sleep(bot, ev):
     try:
         for i in ev.message:
@@ -153,7 +153,7 @@ def get_anonymous(ev: CQEvent):
     return msg
 
 
-@sv.on_prefix(('塞口球匿名', '匿名塞口球'), only_to_me=True)
+@sv.on_prefix('塞口球匿名', '匿名塞口球', only_to_me=True)
 async def anonymous_sleep(bot, ev: CQEvent):
     msg = str(ev.message)
     matchObj = re.match(r'^ ?([^ ]+)( [0-9]+)?个?小?([月星周zZ时分秒HMSDhmsd天]?)钟?期?$', msg)
@@ -193,7 +193,7 @@ async def about_anonymous(bot, ev: CQEvent):
         anonymous_list[ev.group_id]['no_anonymous'] = True
 
 
-@sv.on_prefix(('全域沉默', '关闭群聊', '全员口球'), only_to_me=True)
+@sv.on_prefix('全域沉默', '关闭群聊', '全员口球', only_to_me=True)
 async def all_silence(bot, ev: CQEvent):
     msg = ev.message.extract_plain_text()
     matchObj = re.match(r'^ *([0-9]+)个?小?([月星周zZ时分秒HMSDhmsd天]?)钟?期?$', msg)
@@ -215,7 +215,7 @@ async def all_silence(bot, ev: CQEvent):
     util.add_delay_job(task=task, id=str(ev.group_id), delay_time=time, args=[ev])
 
 
-@sv.on_prefix(('设置名片',), only_to_me=True)
+@sv.on_prefix('设置名片', only_to_me=True)
 async def set_card(bot, ev:CQEvent):
     if not priv.check_priv(ev, priv.PYUSER):
         await bot.finish(ev, '权限不够哦', at_sender=True)

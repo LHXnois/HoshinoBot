@@ -50,13 +50,13 @@ BCR_SITES = f'''
 ※日台服速查请输入【pcr速查】'''
 
 
-@sv.on_fullmatch(('pcr速查', 'pcr图书馆', '图书馆'))
+@sv.on_fullmatch('pcr速查', 'pcr图书馆', '图书馆')
 async def pcr_sites(bot, ev: CQEvent):
     await bot.send(ev, PCR_SITES, at_sender=True)
     await util.silence(ev, 60)
 
 
-@sv.on_fullmatch(('bcr速查', 'bcr攻略'))
+@sv.on_fullmatch('bcr速查', 'bcr攻略')
 async def bcr_sites(bot, ev: CQEvent):
     await bot.send(ev, BCR_SITES, at_sender=True)
     await util.silence(ev, 60)
@@ -105,7 +105,7 @@ DRAGON_TOOL = f'''
 网站内有全词条和搜索，或需科学上网'''
 
 
-@sv.on_fullmatch(('一个顶俩', '拼音接龙', '韵母接龙'))
+@sv.on_fullmatch('一个顶俩', '拼音接龙', '韵母接龙')
 async def dragon(bot, ev):
     await bot.send(ev, DRAGON_TOOL, at_sender=True)
     await util.silence(ev, 60)

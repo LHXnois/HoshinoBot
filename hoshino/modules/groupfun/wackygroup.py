@@ -71,8 +71,8 @@ async def howtobaidu(bot, ev: CQEvent):
     await bot.send(ev, msg, at_sender=True)
 
 
-@Nbnhhsh.on_suffix(('是啥', '是啥啊', '是啥？', '是啥啊？'), only_to_me=True)
-@Nbnhhsh.on_prefix(('??', '？？', '啥是'), only_to_me=True)
+@Nbnhhsh.on_suffix('是啥', '是啥啊', '是啥？', '是啥啊？', only_to_me=True)
+@Nbnhhsh.on_prefix('??', '？？', '啥是', only_to_me=True)
 async def nbnhhsh(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     if len(kw) > 1 and kw.isalnum():
@@ -90,7 +90,7 @@ async def nbnhhsh(bot, ev: CQEvent):
             Nbnhhsh.logger.error('查询失败')
 
 
-@Wyy.on_keyword(('上号', '网抑云', '到点了'))
+@Wyy.on_keyword('上号', '网抑云', '到点了')
 async def music163_sentences(bot, ev: CQEvent):
     now = datetime.now(tz)
     if not (0 <= now.hour <= 1):
@@ -111,7 +111,7 @@ async def music163_sentences(bot, ev: CQEvent):
     await bot.send(ev, sentences)
 
 
-@Answer.on_prefix(('人生解答', '答案之书'), only_to_me=True)
+@Answer.on_prefix('人生解答', '答案之书', only_to_me=True)
 async def chat_answer(bot, ev: CQEvent):
     try:
         answers = R.data('groupfun/wackygroup/answer.json', 'json')
@@ -163,7 +163,7 @@ async def weiba(bot, ev: CQEvent):
         await bot.send(ev, newcard)
 
 
-@Lw.on_fullmatch(('迫害龙王', '谁是龙王'), only_to_me=True)
+@Lw.on_fullmatch('迫害龙王', '谁是龙王', only_to_me=True)
 async def longwang(bot, ev: CQEvent):
     longwang = await Gm(ev).honor_info(
         honor_type='talkative', key='current_talkative')
@@ -179,13 +179,13 @@ async def longwang(bot, ev: CQEvent):
     await bot.send(ev, msg)
 
 
-@Cl.on_fullmatch(('对表'), only_to_me=True)
+@Cl.on_fullmatch('对表', only_to_me=True)
 async def checkclock(bot, ev: CQEvent):
     msg = '[CQ:share,url=https://time.is/zh/,title=时间校准]'
     await bot.send(ev, msg)
 
 
-@Yinglish.on_prefix(('提色', '提涩', '提瑟'), only_to_me=True)
+@Yinglish.on_prefix('提色', '提涩', '提瑟', only_to_me=True)
 async def seqiup(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     kw = util.filt_message(kw)
@@ -193,7 +193,7 @@ async def seqiup(bot, ev: CQEvent):
     await bot.send(ev, kw)
 
 
-@Yinglish.on_prefix(('提提色', '提提涩', '提提瑟'), only_to_me=True)
+@Yinglish.on_prefix('提提色', '提提涩', '提提瑟', only_to_me=True)
 async def seqiupup(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     kw = util.filt_message(kw)
@@ -221,7 +221,7 @@ async def jiarannogog(bot, ev: CQEvent):
     await bot.send(ev, cont)
 
 
-@Answer.on_prefix(('tql'), only_to_me=True)
+@Answer.on_prefix('tql', only_to_me=True)
 async def tql(bot, ev: CQEvent):
     try:
         for i in ev.message:

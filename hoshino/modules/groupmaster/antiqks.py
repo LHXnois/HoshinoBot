@@ -3,11 +3,10 @@ from hoshino import R, Service, util
 import re
 sv = Service('antiqks', help_='识破骑空士的阴谋')
 
-qks_url = ["granbluefantasy.jp"]
 qksimg1 = R.img('groupmaster/antiqks1.jpg').cqcode
 qksimg2 = R.img('groupmaster/antiqks2.jpg').cqcode
 
-@sv.on_keyword(qks_url)
+@sv.on_keyword("granbluefantasy.jp")
 async def qks_keyword(bot, ev):
     msg = f'骑空士爪巴\n{qksimg1}'
     await bot.send(ev, msg, at_sender=True)

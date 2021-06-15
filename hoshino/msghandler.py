@@ -24,28 +24,21 @@ async def handle_message(bot, event: CQEvent, _):
             return
 
     for t in trigger.chain:
-        service_func = t.find_handler(event)
-        if service_func:
+        for service_func in t.find_handler(event):
             if service_func.only_to_me and not event['to_me']:
-                service_func = None
                 continue  # not to me, ignore.
             if not service_func.sv._check_all(event):
-                service_func = None
                 continue  # permission denied.
             trigger_name = t.__class__.__name__
             break
-
-    if not service_func:
+        else:
+            continue
+        break
+    else:
         event['iscmd'] = None
         return  # triggered nothing.
     event['iscmd'] = trigger_name
     service_func.sv.logger.info(f'Message {event.message_id} triggered {service_func.__name__} by {trigger_name}.')
-
-    if service_func.only_to_me and not event['to_me']:
-        return  # not to me, ignore.
-
-    if not service_func.sv._check_all(event):
-        return  # permission denied.
 
     try:
         await service_func.func(bot, event)

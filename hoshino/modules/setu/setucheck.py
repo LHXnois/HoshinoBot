@@ -83,7 +83,7 @@ class PicListener:
 pls = PicListener()
 
 
-@sv.on_prefix(('涩图鉴定', '色图鉴定', '瑟图鉴定'), only_to_me=True)
+@sv.on_prefix('涩图鉴定', '色图鉴定', '瑟图鉴定', only_to_me=True)
 async def checkswitch(bot, ev: CQEvent):
     ret = []
     gid = ev.group_id

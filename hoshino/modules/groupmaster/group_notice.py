@@ -12,27 +12,30 @@ howleave = ['退群了', '被rm -rf了', '失去了梦想', '离开了我们',
             '**了', '消失了', '离开了我们', '转生了', '尝试用岩浆泡脚',
             ]
 
+
 @sv1.on_notice('group_decrease.leave')
 async def leave_notice(session: NoticeSession):
     uid = session.ctx['user_id']
     avatar = await R.avatar(uid)
     avatar = avatar.cqcode
-    info = await hoshino.get_bot().get_stranger_info(user_id=uid)
-    name = info['nickname']
+    name = await Gm.member_info(uid, 'nickname')
     await session.send(
         f"{str(avatar)}\n{name}({uid}){random.choice(howleave)}。")
 
 
 sv2 = Service('group-welcome', help_='入群欢迎', bundle='master')
 
+
 @sv2.on_notice('group_increase')
 async def increace_welcome(session: NoticeSession):
-    uid = session.event.user_id
-    if uid == session.event.self_id:
+    if (uid := session.event.user_id) == session.event.self_id:
         return  # ignore myself
-    level = await Gm(session.event).vip_info(uid, 'level')
-    if level is not None and level < 9:
-        await session.send(f'⚠新成员qq等级较低(lv.{level})，请群友提高安全意识，谨慎交流')
+    try:
+        level = await Gm(session.event).vip_info(uid, 'level')
+        if level is not None and level < 9:
+            await session.send(f'⚠新成员qq等级较低(lv.{level})，请群友提高安全意识，谨慎交流')
+    except Exception:
+        pass
     welcomes = hoshino.config.groupmaster.increase_welcome
     gid = session.event.group_id
     if gid in welcomes:
