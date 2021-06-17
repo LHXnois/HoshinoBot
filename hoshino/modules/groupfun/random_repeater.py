@@ -130,7 +130,7 @@ async def _repeater(bot, ev, if_daduan=0):
 NOTAOWA_WORD = (
     'bili', 'Bili', 'BILI', '哔哩', '啤梨', 'mu', 'pili', 'dili',
     '是不', '批里', 'nico', '滴哩', 'BiLi', '不会吧', '20', '哼，', '哼,',
-    ',000', '多娜'
+    ',000', '多娜', '霹雳'
 )
 
 lasttaowa = {}
@@ -208,22 +208,19 @@ async def taowabot(bot, ev: CQEvent):
             lasttaowa[group_id] = ('', 0)
             return
     msg = str(ev.message)
-    if (taowa := check_taowa(msg)):
-        if Gm.check_command(ev):
-            return
+    if (taowa := check_taowa(msg)) and not Gm.check_command(ev):
         if taowa[0] in NOTAOWA_WORD or taowa[1] in NOTAOWA_WORD:
             return
         lastt, taowacount = lasttaowa[group_id]
         if taowa != lastt:
             lasttaowa[group_id] = (taowa, 0)
+            msg = taowa[0] + msg + taowa[1]
+            await bot.send(ev, util.filt_message(msg))
         else:
             if taowacount == 0:
                 if taowa[2] != '':
                     await bot.send(ev, '禁止套娃!')
             taowacount += 1
             lasttaowa[group_id] = (taowa, taowacount)
-            return
-        msg = taowa[0] + msg + taowa[1]
-        await bot.send(ev, util.filt_message(msg))
     else:
         lasttaowa[group_id] = (None, 0)

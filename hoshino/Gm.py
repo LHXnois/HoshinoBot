@@ -336,9 +336,9 @@ class Gm:
             message = Message(msg)
             rmessage = msg
         elif type(msg) is CQEvent:
-            message = msg.message
-            rmessage = msg.raw_message
-            msg = msg.raw_message
+            message = Message(str(msg.message))
+            rmessage = str(msg.raw_message)
+            msg = str(msg.raw_message)
         else:
             return None
         if msg in using_cmd_msg:
@@ -355,7 +355,7 @@ class Gm:
         _check_calling_me_nickname(self.bot, event)
         maxx = 4 if notkeyword else 5
         for t in trigger.chain[:maxx]:
-            if sf := t.find_handler(event):
+            for sf in t.find_handler(event):
                 if sf.only_to_me and not event['to_me']:
                     continue
                 using_cmd_msg[msg] = t.__class__.__name__

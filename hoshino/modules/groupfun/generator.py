@@ -5,8 +5,6 @@ from random import choice
 from PIL import Image, ImageDraw, ImageFilter
 from urllib.parse import quote
 
-from nonebot import message
-
 from hoshino import R, Service
 from hoshino.util import pic2b64, FreqLimiter
 from hoshino.typing import CQEvent, MessageSegment, Callable
