@@ -4,6 +4,7 @@
 ![Nonebot Version](https://img.shields.io/badge/nonebot-1.6.0%2B%2C%202.0.0---blue)
 [![试用/赞助群](https://img.shields.io/badge/试用/赞助-Hoshinoのお茶会-brightgreen)](https://jq.qq.com/?_wv=1027&k=eYGgrL4A)
 [![开发交流群](https://img.shields.io/badge/开发交流-Hoshinoの后花园-brightgreen)](https://jq.qq.com/?_wv=1027&k=wgirhYYQ)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLHXnois%2FHoshinoBot.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLHXnois%2FHoshinoBot?ref=badge_shield)
 
 A QQ-bot for Princess Connect Re:Dive based on [Nonebot](https://github.com/nonebot/nonebot)
 
@@ -356,3 +357,7 @@ access_token_secret = "your_access_token_secret"
 
 **yobot**: https://yobot.win/
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLHXnois%2FHoshinoBot.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FLHXnois%2FHoshinoBot?ref=badge_large)
