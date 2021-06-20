@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Iterable, Set
-
+from itertools import chain
 import pytz
 import hoshino
 from hoshino import Service, priv, util, R, sucmd
@@ -171,7 +171,7 @@ async def twitter_stream_daemon():
 async def open_stream(client: PeonyClient):
     Tm.router = TweetRouter()
     router = Tm.router
-    router.load(cfg.follows, cfg.media_only_users)
+    router.load(cfg.follows, cfg.media_only_users())
     Tm.user_id_cache = UserIdCache()
     follow_ids = await Tm.user_id_cache.convert(client, router.follows)
     sv.logger.info(f"订阅推主={router.follows.keys()}, {follow_ids=}")
@@ -200,7 +200,8 @@ async def open_stream(client: PeonyClient):
                     continue    # 无附带媒体，订阅选项media_only=True时忽略
 
                 msg = format_tweet(tweet)
-
+                if '桐生ココ' in msg:
+                    continue
                 if "quoted_status" in tweet:
                     quoted_msg = format_tweet(tweet.quoted_status)
                     msg = f"{msg}\n\n>>>>>\n{quoted_msg}"
@@ -221,7 +222,8 @@ async def open_stream(client: PeonyClient):
                     await s.broadcast(msg, f" @{screen_name} 推文", 0.2)
 
             else:
-                sv.logger.debug("Ignore non-tweet event.")
+                #sv.logger.debug("Ignore non-tweet event.")
+                pass
             if router.needrestart:
                 router.needrestart = False
                 return
