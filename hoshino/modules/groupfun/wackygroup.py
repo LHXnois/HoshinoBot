@@ -1,5 +1,6 @@
 from os import replace
 import random
+from re import split
 import pytz
 from datetime import datetime
 from urllib import parse
@@ -13,6 +14,8 @@ Answer = SubService('answerbook', sv, help_='''为什么不问问神奇海螺呢
 Choseone = SubService('choseone', sv, help_='''拯救选择恐惧症！
 [#选择A还是B] 帮你做出选择''')
 Cl = SubService('checkcolock', sv, help_='''看看你的表走得准不准！
+[#对表] 获取对表网站链接''')
+Cp = SubService('CPwords', sv, help_='''CP文生成
 [#对表] 获取对表网站链接''')
 Howtobaidu = SubService('howtobaidu', sv, help_='''拯救懒人群友！
 [#百度xxx] 让可可萝教你百度xxx''')
@@ -152,9 +155,8 @@ async def weiba(bot, ev: CQEvent):
     weiba = fcode+kw[::-1]+ecode
     oldcard = ev.sender['card'] or ev.sender['nickname']
     newcard = oldcard+weiba
-    Gm_ = Gm(ev)
     try:
-        if await Gm_.card_set(ev.user_id, newcard) == Gm_.PRIV_NOT_ENOUGH:
+        if await Gm(ev).card_set(ev.user_id, newcard) == Gm.PRIV_NOT_ENOUGH:
             await bot.send(ev, '好像不能亲手给你戴上呢> <，请自己全选复制换上去吧~', at_sender=True)
             await bot.send(ev, newcard)
     except Exception as e:
@@ -221,7 +223,7 @@ async def jiarannogog(bot, ev: CQEvent):
     await bot.send(ev, cont)
 
 
-@Answer.on_prefix('tql', only_to_me=True)
+@Tql.on_prefix('tql', only_to_me=True)
 async def tql(bot, ev: CQEvent):
     try:
         for i in ev.message:
@@ -238,3 +240,28 @@ async def tql(bot, ev: CQEvent):
         await bot.send(ev, stories.replace('%name%', kw))
     except Exception:
         sv.logger.error('chat_tql读json出错')
+
+
+@Cp.on_prefix('cp', 'CP', only_to_me=True)
+async def cp(bot, ev: CQEvent):
+    kw = []
+    for i in ev.message:
+        if i['type'] == 'at' and i['data']['qq'] != 'all':
+            info = await Gm(ev).member_info(i['data']['qq'])
+            kw.append(info['card'] or info['nickname'])
+            if len(kw) > 1:
+                break
+    else:
+        if kws := ev.message.extract_plain_text().strip().split():
+            kw.extend(kws)
+        if len(kw) == 1:
+            kw.append(ev.sender['card'] or ev.sender['nickname'])
+    if len(kw) < 2:
+        return
+    try:
+        random.shuffle(kw)
+        stories = R.data('groupfun/wackygroup/cp.json', 'json').read
+        stories = random.choice(stories)
+        await bot.send(ev, stories.format(A=kw[0], B=kw[1]))
+    except Exception:
+        sv.logger.error('chat_cp读json出错')

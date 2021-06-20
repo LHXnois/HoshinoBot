@@ -530,9 +530,8 @@ async def kuaijiehuifu(bot, ev):
 async def pokepoke(session: NoticeSession):
     if session.event.target_id != session.event.self_id:
         return
-    user_id = session.event.user_id
-    if random.random() < 0.5:
-        await session.send(f'[CQ:poke,qq={user_id}]')
+    if random.random() < 1:
+        await util.poke_in_session(session)
     elif random.random() < 0.5:
         await session.send('?主人有什么事吗')
     elif random.random() < 0.5:

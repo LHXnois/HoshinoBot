@@ -266,20 +266,16 @@ def add_cron_job(task, id=None, hour='*', minute='0', second='0', args=[]):
     return job
 
 
-def poke(uid):
-    return MessageSegment(type_='poke', data={'qq': str(uid), })
-
-
 async def poke_in_session(session, uid=None):
     if uid is None:
-        uid = session['user_id']
-    await session.send(poke(uid))
+        uid = session.event.user_id
+    await session.send(MessageSegment.poke(uid))
 
 
 async def poke_in_event(bot, ev, uid=None):
     if uid is None:
         uid = ev.user_id
-    await bot.send(ev, poke(uid))
+    await bot.send(ev, MessageSegment.poke(uid))
 
 
 def gencardimage(file, source=None, icon=None):

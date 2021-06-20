@@ -322,13 +322,11 @@ class Gm:
             self.privs['needroleupdate'] = False
             return Gm.PRIV_NOT_ENOUGH
 
-
     @classmethod
     def parse_command(self, cmd_str, NOTLOG=False):
         parse_command = CommandManager().parse_command(
             self.bot, cmd_str, NOTLOG)
         return parse_command
-
 
     @classmethod
     def check_command(self, msg, notkeyword=False) -> str:
@@ -349,7 +347,7 @@ class Gm:
             "post_type": "message",
             "raw_message": rmessage,
             "sub_type": "normal",
-            }
+        }
         event = CQEvent().from_payload(ev)
         event['to_me'] = False
         _check_calling_me_nickname(self.bot, event)
