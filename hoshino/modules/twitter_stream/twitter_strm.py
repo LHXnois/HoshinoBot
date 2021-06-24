@@ -200,12 +200,12 @@ async def open_stream(client: PeonyClient):
                     continue    # 无附带媒体，订阅选项media_only=True时忽略
 
                 msg = format_tweet(tweet)
-                if '桐生ココ' in msg:
-                    continue
+                
                 if "quoted_status" in tweet:
                     quoted_msg = format_tweet(tweet.quoted_status)
                     msg = f"{msg}\n\n>>>>>\n{quoted_msg}"
-
+                if '桐生ココ' in msg:
+                    continue
                 old_profile_img = entry.profile_image
                 entry.profile_image = tweet.user.get(
                     "profile_image_url_https") or entry.profile_image

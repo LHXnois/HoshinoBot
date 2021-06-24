@@ -116,7 +116,7 @@ async def _repeater(bot, ev, if_daduan=0):
                 textcount = 0
                 break
         msg = str(util.filt_message(ev.message))
-        if textcount == 1:
+        if textcount >= 1:
             if random.random() < 0.05:
                 msg = msg[::-1]
             elif random.random() < 0.05:
