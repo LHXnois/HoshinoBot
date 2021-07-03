@@ -6,7 +6,7 @@ from datetime import datetime
 from urllib import parse
 from hoshino import R, Service, util, SubService, aiorequests
 from hoshino.Gm import Gm
-from hoshino.typing import CQEvent
+from hoshino.typing import CQEvent, MessageSegment
 
 sv = Service('wackiness', help_='''整活小功能们''', visible=False, bundle='fun')
 Answer = SubService('answerbook', sv, help_='''为什么不问问神奇海螺呢！
@@ -51,13 +51,11 @@ async def choseone(bot, ev: CQEvent):
     arr = kw.split('还是')
     arr = [i for i in arr if i != '']
     if len(arr) > 1:
-        msg = []
-        msg.append('')
+        msg = ['']
         count = 1
         for i in arr:
-            if len(i) > 0:
-                msg.append(f'{count}，{i}')
-                count += 1
+            msg.append(f'{count}，{i}')
+            count += 1
         msg.append(f'建议选择：{random.choice(arr)}')
         await bot.send(ev, util.escape('\n'.join(msg)), at_sender=True)
 
@@ -67,10 +65,9 @@ async def howtobaidu(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     if kw == '':
         return
-    baiduurl = 'https://tool.pcrlink.cn/nbhbdm/?'
+    baiduurl = 'https://tool.pcrlink.cn/nbhbdm/?s='
     msg = f'可可罗教你怎么百度{kw}哦'
-    url = baiduurl + f's={kw}'
-    msg = f'[CQ:share,url={url},title={msg}]'
+    msg = MessageSegment.share(url=baiduurl+kw, title=msg)
     await bot.send(ev, msg, at_sender=True)
 
 
@@ -84,8 +81,8 @@ async def nbnhhsh(bot, ev: CQEvent):
         resp = await aiorequests.post(url, data=body, timeout=5)
         if resp.ok:
             res = await resp.json()
-            if 'trans' in res[0]:
-                msg = f'"{kw}"可能是：\n'+' '.join(res[0]['trans'])
+            if ans := res[0].get('trans'):
+                msg = f'"{kw}"可能是：\n'+' '.join(ans)
                 await bot.send(ev, util.escape(msg))
             else:
                 await bot.send(ev, 'emm...在下也猜不透它的意思')
@@ -117,8 +114,8 @@ async def music163_sentences(bot, ev: CQEvent):
 @Answer.on_prefix('人生解答', '答案之书', only_to_me=True)
 async def chat_answer(bot, ev: CQEvent):
     try:
-        answers = R.data('groupfun/wackygroup/answer.json', 'json')
-        answers = answers.read["Theanswer"]
+        answers = R.data(
+            'groupfun/wackygroup', 'answer.json').read["Theanswer"]
         await bot.send(ev, random.choice(answers), at_sender=True)
     except Exception:
         sv.logger.error('chat_answer读json出错')
@@ -133,10 +130,7 @@ async def chat_jinnianshengyu(bot, ev: CQEvent):
     xiaohao = (nowtime - start).days
     shengyu = int(xiaohao*10/365)
     msg = f'今年已过去{xiaohao}天\n'
-    for i in range(shengyu):
-        msg += '◼'
-    for i in range(10-shengyu):
-        msg += '◻'
+    msg += '◼'*shengyu + '◻'*(10-shengyu)
     await bot.send(ev, msg)
 
 
@@ -144,7 +138,7 @@ async def chat_jinnianshengyu(bot, ev: CQEvent):
 async def speakthis(bot, ev: CQEvent):
     kw = ev.message.extract_plain_text().strip()
     if kw:
-        await bot.send(ev, f'[CQ:tts,text={kw}]')
+        await bot.send(ev, MessageSegment.tts(kw))
 
 
 @Tail.on_prefix('我要小尾巴', only_to_me=True)
@@ -173,17 +167,17 @@ async def longwang(bot, ev: CQEvent):
         await bot.finish(ev, '没有龙王')
     lwid = longwang['user_id']
     if lwid == ev.self_id:
-        msg = R.img(f'groupfun/longwang/isme{random.randint(1, 4)}.jpg').cqcode
+        msg = R.img('groupfun/longwang', f'isme{random.randint(1, 4)}.jpg').cqcode
     else:
         pohaiimg = R.img(
-            f'groupfun/longwang/pohai{random.randint(1, 13)}.jpg').cqcode
+            'groupfun/longwang', f'pohai{random.randint(1, 13)}.jpg').cqcode
         msg = f'[CQ:at, qq={lwid}]\n{str(pohaiimg)}'
     await bot.send(ev, msg)
 
 
 @Cl.on_fullmatch('对表', only_to_me=True)
 async def checkclock(bot, ev: CQEvent):
-    msg = '[CQ:share,url=https://time.is/zh/,title=时间校准]'
+    msg = MessageSegment.share(url='https://time.is/zh/', title='时间校准')
     await bot.send(ev, msg)
 
 
@@ -205,7 +199,7 @@ async def seqiupup(bot, ev: CQEvent):
 
 @Mz.on_rex(r'^我?好想做([^/]+)的([^/]+)啊', only_to_me=True)
 async def jiarannogog(bot, ev: CQEvent):
-    cont = R.data('groupfun/wackygroup/jiarannodog.json', 'json').read
+    cont = R.data('groupfun/wackygroup', 'jiarannodog.json').read
     cont = '\n'.join(cont)
     jiaran = ev['match'].group(1)
     dog = ev['match'].group(2)
@@ -235,7 +229,7 @@ async def tql(bot, ev: CQEvent):
             kw = ev.message.extract_plain_text().strip()
         if not kw:
             return
-        stories = R.data('groupfun/wackygroup/tql.json', 'json').read
+        stories = R.data('groupfun/wackygroup', 'tql.json').read
         stories = random.choice(stories)
         await bot.send(ev, stories.replace('%name%', kw))
     except Exception:
@@ -260,7 +254,7 @@ async def cp(bot, ev: CQEvent):
         return
     try:
         random.shuffle(kw)
-        stories = R.data('groupfun/wackygroup/cp.json', 'json').read
+        stories = R.data('groupfun/wackygroup', 'cp.json').read
         stories = random.choice(stories)
         await bot.send(ev, stories.format(A=kw[0], B=kw[1]))
     except Exception:

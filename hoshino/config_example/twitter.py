@@ -26,9 +26,8 @@ follows = {
     "azur-twitter": ['azurlane_staff', 'azurlane_bisoku'],
 }
 
-lhx_fav = R.data('twitter/lhx_fav.json', 'json')
-if not lhx_fav.exist:
-    lhx_fav.write([])
+lhx_fav = R.data('twitter', 'lhx_fav.json', default=list())
+
 follows["lhx-favorite-twitter"] = list(set(lhx_fav.read).difference(
     set(follows["moe-artist-twitter"]+follows["coffee-favorite-twitter"]+follows["depress-artist-twitter"])
     ))

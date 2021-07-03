@@ -1,18 +1,38 @@
 import random
 from typing import (Any, Callable, Dict, Iterable, List, NamedTuple, Optional,
                     Set, Tuple, Union)
-
+from io import BytesIO
+from pathlib import Path
+from base64 import b64encode
 from aiocqhttp import Event as CQEvent
 from nonebot import (CommandSession, CQHttpError, Message, MessageSegment as ms,
                      NLPSession, NoticeSession, RequestSession)
+from requests.structures import CaseInsensitiveDict
 
 from . import HoshinoBot
 
 
 class MessageSegment(ms):
     @staticmethod
-    def image(file: str, **args) -> 'MessageSegment':
+    def image(file: Union[str, bytes, BytesIO, Path],
+              type_: Optional[str] = None,
+              cache: bool = True,
+              id: Optional[int] = None,
+              c: Optional[int] = None) -> 'MessageSegment':
         """图片。"""
+        # if isinstance(file, BytesIO):
+        #    file = file.read()
+        # if isinstance(file, bytes):
+        #    file = f"base64://{b64encode(file).decode()}"
+        # elif isinstance(file, Path):
+        #    file = f'file:///{file.resolve()}'
+        args = {'cache': 1 if cache else 0}
+        if type_ in ('flash', 'show'):
+            args['type'] = type_
+            if type_ == 'show' and id:
+                args['id'] = id
+        if c:
+            args['c'] = c
         return MessageSegment(type_='image', data={'file': file, **args})
 
     @staticmethod

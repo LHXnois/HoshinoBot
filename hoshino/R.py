@@ -1,15 +1,14 @@
 import os
-from posixpath import split
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
-from nonebot import MessageSegment
 from PIL import Image, ImageFont, ImageDraw, ImageFilter
+from aiocqhttp.message import Message
 
 import hoshino
 from hoshino import util, aiorequests
 from hoshino.config import Proxies
-from hoshino.typing import Union
+from hoshino.typing import Union, MessageSegment, List, CaseInsensitiveDict
 
 import re
 import random
@@ -18,14 +17,17 @@ import moviepy.editor as mpe
 
 
 class ResObj:
-    def __init__(self, res_path):
+    def __init__(self, res_path, must_file=False):
         res_dir = os.path.expanduser(hoshino.config.RES_DIR)
         fullpath = os.path.abspath(os.path.join(res_dir, res_path))
         if not fullpath.startswith(os.path.abspath(res_dir)):
             raise ValueError('Cannot access outside RESOUCE_DIR')
         self.__path = os.path.normpath(res_path)
-        self.filename = self.__path.split('//')[-1]
-        self.suffix = self.__path.split('.')[-1]
+        self.dir, self.file = os.path.split(self.__path)
+        if self.file:
+            self.file, self.suffix = os.path.splitext(self.file)
+        elif must_file:
+            raise ValueError('must be a file')
 
     @property
     def url(self):
@@ -91,34 +93,30 @@ class ResImg(ResObj):
 
 
 class ResData(ResObj):
-    def __init__(self, res_path, Type: str = None):
-        ResObj.__init__(self, res_path)
-        self.Type = Type
+    def __init__(self, res_path, default=None):
+        super().__init__(res_path, must_file=True)
+        if not self.exist:
+            dirpath = os.path.dirname(self.path)
+            if not os.path.exists(dirpath):
+                os.makedirs(dirpath, exist_ok=True)
+            if default is not None:
+                self.write(default)
 
     @property
     def read(self) -> dict:
-        if not self.Type:  # 没有指定后缀，自动识别后缀名
-            try:
-                self.Type = filetype.guess_mime(self.path).split('/')[1]
-            except Exception:
-                raise ValueError('不是有效文件类型')
-        if self.Type == 'json':
+        if self.suffix == '.json':
             return util.load_jsons(self.path)
-        if self.Type == 'txt':
+        if self.suffix == '.txt':
             return [line.strip() for line in open(
                 self.path, encoding='UTF-8').readlines()]
         else:
-            hoshino.logger.error(f'未定义该类型数据处理方式：{self.Type}')
+            hoshino.logger.error(f'未定义该类型数据处理方式：{self.suffix}')
 
     def write(self, content):
-        if self.Type == 'json':
-            if not self.exist:
-                dirpath = os.path.split(self.path)[0]
-                if not os.path.exists(dirpath):
-                    os.makedirs(dirpath, exist_ok=True)
+        if self.suffix == '.json':
             util.save_jsons(content, self.path)
         else:
-            hoshino.logger.error(f'未定义该类型数据处理方式：{self.Type}')
+            hoshino.logger.error(f'未定义该类型数据处理方式：{self.suffix}')
 
 
 class ResFont(ResObj):
@@ -129,22 +127,15 @@ class ResFont(ResObj):
 class TemImg(ResImg):
 
     def __init__(self, res_path,
-                 Type: str = None,
                  for_gocq: bool = False,
-                 getpic=False):
+                 must_file=True):
         self.for_gocq = for_gocq
-        self.Type = Type
         if for_gocq:
             self.gocqpath = res_path
         else:
-            if not getpic:
-                suffix = os.path.splitext(res_path)
-                if suffix[1] in ('.image', '.mirai', '.null'):
-                    res_path = suffix[0]
-            ResObj.__init__(self, res_path)
-            self.__path = self._ResObj__path
+            super().__init__(res_path, must_file=must_file)
             if not self.exist:
-                dirpath = os.path.split(self.path)[0]
+                dirpath = os.path.dirname(self.path)
                 if not os.path.exists(dirpath):
                     os.makedirs(dirpath, exist_ok=True)
 
@@ -154,7 +145,7 @@ class TemImg(ResImg):
         if self.for_gocq:
             return self.gocqpath
         else:
-            return os.path.join(hoshino.config.RES_DIR, self.__path)
+            return super().path
 
     async def download(self, url: str, use_proxie=False, proxies=Proxies, typecheck=True):
         hoshino.logger.info(f'download_tem_img from {url}')
@@ -210,26 +201,28 @@ class TemImg(ResImg):
             return
         if not suffix:  # 没有指定后缀，自动识别后缀名
             try:
-                suffix = filetype.guess_mime(
+                self.suffix = filetype.guess_mime(
                     content).split('/')[1]
-                self.Type = suffix
             except Exception:
                 raise ValueError('不是有效文件类型')
                 suffix = 'png'
         self.__path = self.__path+'.'+suffix
 
+    @property
     def hexie(self):
-        im = self.open()
-        width, height = im.size
-        draw = ImageDraw.Draw(im)
-        draw.point(
-            (random.randint(1, width), random.randint(1, height)),
-            fill=(
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255)
-                ))
-        im.save(self.path)
+        if self.suffix not in ('.gif', '.GIF'):
+            im = self.open()
+            width, height = im.size
+            draw = ImageDraw.Draw(im)
+            draw.point(
+                (random.randint(1, width), random.randint(1, height)),
+                fill=(
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255)
+                    ))
+            im.save(self.path)
+        return self
 
 
 class TemVideo(ResObj):
@@ -265,13 +258,13 @@ def img(path, *paths):
 
 
 def rand_img(path, *paths):
-    files = os.listdir(os.path.join('img', path, *paths))
+    files = os.listdir(get(path, *paths).path)
     rfile = random.choice(files)
     return ResImg(rfile)
 
 
-def data(path, Type=None):
-    return ResData(os.path.join('data', path), Type)
+def data(path, *paths, default=None):
+    return ResData(os.path.join('data', path, *paths), default)
 
 
 def font(path, *paths):
@@ -311,6 +304,86 @@ async def tem_gocqimg(url_path, headers=None, thread_count=1):
     return TemImg(res_path['file'], for_gocq=True)
 
 
+async def download_img(url: str, *paths,
+                       cache: bool = True,
+                       check_suffix: bool = True,
+                       proxies: dict = None,
+                       headers: dict = None,
+                       **args) -> TemImg:
+    if paths:
+        # path = os.path.join('tem/img', *paths)
+        tem = tem_img(*paths)
+        if tem.exist and cache:
+            return tem
+        filename = tem.file
+        suffix = tem.suffix
+        dirname = tem.dir
+        if suffix in ('.image', '.mirai', '.null') and check_suffix:
+            suffix = ''
+
+    hoshino.logger.info(f'downloading img from {url}')
+
+    # ================================ #
+    # 网络请求参数
+    pama = {}
+    if proxies is True:
+        pama['proxies'] = Proxies
+    elif proxies is not None:
+        pama['proxies'] = proxies
+    if headers is not None:
+        pama['headers'] = CaseInsensitiveDict(headers)
+
+    # ================================= #
+    # 下载，确定后缀
+    resp = await aiorequests.get(url, **pama)
+
+    hoshino.logger.debug(f'status_code={resp.status_code}')
+
+    if 200 != resp.status_code:
+        pass
+    if check_suffix and not suffix:
+        if match := re.search(
+                'image/(?P<type>[^;]+)',
+                resp.headers.get('content-type'),
+                flags=re.I):
+            suffix = '.'+match.groupdict().get('type')
+
+    content = await resp.content
+
+    if check_suffix and not suffix:
+        try:
+            suffix = filetype.guess_extension(content) or 'jpg'
+            suffix = '.'+suffix
+        except Exception:
+            suffix = '.jpg'
+    # ================================== #
+    # 这里必须确定img对象
+    if paths:
+        img = TemImg(os.path.join(dirname, filename+suffix))
+
+    # ================================== #
+    hoshino.logger.debug(f'is image, saving to {img.path}')
+    with open(img.path, 'wb') as f:
+        f.write(content)
+        hoshino.logger.debug('saved!')
+    return img
+
+
+async def download_img_form_msg(msg: MessageSegment, *dirpath) -> TemImg:
+    return await download_img(
+        msg['data']['url'], *dirpath, msg['data']['file'])
+
+
+async def download_img_form_msgs(msg: Message, *dirpath, num=0) -> list:
+    imglist = []
+    for i in msg:
+        if i['type'] == 'image':
+            imglist.append(await download_img_form_msg(i, *dirpath))
+        if len(imglist) >= num > 0:
+            break
+    return imglist
+
+
 def crop_square(img: Image) -> Image:
     width, height = img.size
     if width != height:
@@ -330,19 +403,16 @@ def get_circle_pic(pic: Image, size: int = None, scale: int = 5) -> Image:
     draw = ImageDraw.Draw(mask)
     draw.ellipse((0, 0, size * scale, size * scale), fill=255)
     mask = mask.resize((size, size), Image.ANTIALIAS)
-    ret_img = pic.copy()
-    ret_img.putalpha(mask)
-    return ret_img
+    pic.putalpha(mask)
+    return pic
 
 
 async def avatar(user_id: int, s: int = 100) -> TemImg:
     apiPath = f'http://q1.qlogo.cn/g?b=qq&nk={user_id}&s={s}'
-    avatartem = await tem_gocqimg(apiPath)
-    if not avatartem.exist:
-        avatartem = tem_img(f'groupmaster/avatar/{user_id}_{s}.png')
-        if not avatartem.exist:
-            await avatartem.download(apiPath)
-    return avatartem
+    return await download_img(
+        apiPath, 'groupmaster/avatar', f'{user_id}_{s}.png',
+        check_suffix=False,
+        )
 
 
 def add_text(img: Image, text: str, textsize: int,

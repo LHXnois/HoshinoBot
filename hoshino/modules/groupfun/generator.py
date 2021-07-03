@@ -67,7 +67,7 @@ async def yxh(bot, ev: CQEvent):
 
 @sv.on_prefix('狗屁不通', only_to_me=True)
 async def gpbt(bot, ev: CQEvent):
-    data = R.data('groupfun/generator/gpbt.json', 'json').read
+    data = R.data('groupfun/generator', 'gpbt.json').read
     title = ev.message.extract_plain_text().strip()
     length = 500
     body = ""
@@ -200,9 +200,7 @@ async def avatargen(bot, ev: CQEvent, type, gif=False, anum=1, **args):
     avatar = []
     for m in ev.message:
         if m.type == 'image':
-            pic = await R.tem_img(
-                'groupfun/generator/input', m.data['file']
-                ).download(m.data['url'])
+            pic = await R.download_img_form_msg(m, 'groupfun/generator/input')
             avatar.append(R.crop_square(pic.open()))
         if m.type == 'at' and m.data['qq'] != 'all':
             avatar.append((await R.avatar(int(m.data['qq']), 160)).open())
@@ -308,7 +306,7 @@ def support_gen(avatar: Image) -> Image:
 
 @avatargenadder('rua', '搓', gif=True)
 def rua_gen(avatar_origin: Image) -> MessageSegment:
-    avatar_origin = R.get_circle_pic(avatar_origin, 350)
+    avatar_origin = R.get_circle_pic(avatar_origin, 350).convert('RGBA')
     avatar_size = [(350, 350), (372, 305), (395, 283), (380, 305), (350, 372)]
     avatar_pos = [(50, 100), (28, 145), (5, 167), (5, 145), (50, 78)]
     hand_pos = (0, -50)
@@ -342,8 +340,8 @@ def mua_gen(avatar: Image) -> MessageSegment:
     self_locs = [(92, 64), (135, 40), (84, 105), (80, 110), (155, 82), (60, 96),
                  (50, 80), (98, 55), (35, 65), (38, 100), (70, 80), (84, 65), (75, 65)]
     imgs = []
-    avatar1 = R.get_circle_pic(avatar[0], 50)
-    avatar2 = R.get_circle_pic(avatar[1], 40)
+    avatar1 = R.get_circle_pic(avatar[0], 50).convert('RGBA')
+    avatar2 = R.get_circle_pic(avatar[1], 40).convert('RGBA')
     for i in range(13):
         frame = R.img('groupfun/generator', f'kiss/frame{i}.png').open().convert('RGBA')
         x, y = user_locs[i]
@@ -364,8 +362,8 @@ def ceng_gen(avatar: Image) -> MessageSegment:
     self_locs = [(102, 95, 70, 80, 0), (108, 60, 50, 100, 0), (97, 18, 65, 95, 0),
                  (65, 5, 75, 75, -20), (95, 57, 100, 55, -70), (109, 107, 65, 75, 0)]
     imgs = []
-    avatar1 = R.get_circle_pic(avatar[0])
-    avatar2 = R.get_circle_pic(avatar[1])
+    avatar1 = R.get_circle_pic(avatar[0]).convert('RGBA')
+    avatar2 = R.get_circle_pic(avatar[1]).convert('RGBA')
     for i in range(6):
         frame = R.img('groupfun/generator', f'rub/frame{i}.png').open().convert('RGBA')
         x, y, w, h, angle = user_locs[i]

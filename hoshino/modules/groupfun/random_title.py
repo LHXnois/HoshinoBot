@@ -170,14 +170,14 @@ async def check_cd(bot, ev, addcd):
     _flmt.start_cd(ev.user_id, addcd)
 
 
-pohailistdata = R.data('groupfun/random_title/pohailist.json', 'json')  # 读列表
+pohailistdata = R.data('groupfun/random_title', 'pohailist.json')  # 读列表
 if not pohailistdata.exist:
     content = '''{
     1111111: []
 }'''
     pohailistdata.write(content)
 pohailist = pohailistdata.read
-titledata = R.data('groupfun/random_title/data.json', 'json').read
+titledata = R.data('groupfun/random_title', 'data.json').read
 
 
 def pohaiadd(group_id, user_id):  # 加入迫害列表

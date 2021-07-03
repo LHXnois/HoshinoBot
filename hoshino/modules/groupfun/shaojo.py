@@ -10,7 +10,7 @@ sv = Service('2d_girl', enable_on_default=True, help_='''今天也是少女!
 
 
 def format_msg(qq: int, name):
-    data = R.data('groupfun/shaojo.json', 'json').read
+    data = R.data('groupfun', 'shaojo.json').read
     face_style = data['face_style']
     height = data['height']
     breast_size = data['breast_size']

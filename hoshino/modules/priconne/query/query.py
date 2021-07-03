@@ -111,14 +111,14 @@ async def dragon(bot, ev):
     await util.silence(ev, 60)
 
 
-Duomubiao = R.data('priconne/query/duomubiao.json', 'json')
-Duomubiaopic = R.img('priconne/tips/duomubiao.jpg').cqcode
+Duomubiao = R.data('priconne/query', 'duomubiao.json')
+Duomubiaopic = R.img('priconne/tips', 'duomubiao.jpg').cqcode
 
 
 @sv.on_fullmatch(('多目标boss机制文字'), only_to_me=True)
 async def duomubiao(bot, ev):
     msg = Duomubiao.read
-    await bot.send(ev, '\n'.join(msg), at_sender=True)
+    await bot.send(ev, '\n'.join(msg))
     await util.silence(ev, 60*5)
 
 
@@ -141,7 +141,7 @@ otherk = [
     f"{OTHER_KEYWORDS}",
     "※日台服速查请输入【pcr速查】"]
 
-pcrFORMULA = R.data('priconne/query/FORMULA.json', 'json')
+pcrFORMULA = R.data('priconne/query', 'FORMULA.json')
 
 
 @sv.on_prefix(('pcr公式'), only_to_me=True)

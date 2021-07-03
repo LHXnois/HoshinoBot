@@ -17,7 +17,7 @@ server_addr = "https://pcresource.coldthunder11.com/rank/"
 
 class Rank:
     areas = {'cn': '国服', 'tw': '台服', 'jp': '日服'}
-    rankdata = R.data('priconne/query/rank.json', 'json')
+    rankdata = R.data('priconne/query', 'rank.json')
     ranks = rankdata.read['source']
     rankc = rankdata.read['cache']
 
@@ -36,12 +36,11 @@ class Rank:
         else:
             pass
 
-    async def genrenkpic(self, no_cache=False):
+    async def genrenkpic(self, cache=True):
         pics = []
         for picname in self.cache['files']:
-            pic = R.tem_img('priconne/quick', picname)
-            if not pic.exist or no_cache:
-                await pic.download(f'{self.sourceurl}{picname}')
+            pic = await R.download_img(
+                self.sourceurl+picname, 'priconne/quick', picname, cache=cache)
             pics.append(pic.open().convert('RGBA'))
         rpic = util.concat_pic(pics, 0, 0)
         rpic.convert('RGB').save(self.rankp.path)
@@ -62,7 +61,7 @@ class Rank:
             Rank.rankdata.write(data)
             await self.genrenkpic()
         elif no_cache:
-            await self.genrenkpic(no_cache)
+            await self.genrenkpic(cache=False)
         return new
 
     def set_source(self, name=None, channel=None, route=None):
@@ -105,6 +104,8 @@ async def rank_sheet(bot, ev):
     qrank = Rank(area)
     msg.append(qrank.cache['notice'])
     msg.append(str(qrank.pic))
+    if is_jp:
+        msg.append(str(R.img('priconne/quick', 'ranknotice.jpeg').cqcode))
     await bot.send(ev, "".join(msg), at_sender=True)
     await util.silence(ev, 60, False)
 
@@ -227,8 +228,7 @@ async def update_rankpic(session: CommandSession):
         if i['type'] == 'image':
             img = i['data']['file']
             imgurl = i['data']['url']
-            pic = R.tem_img('storimg/rank', img)
-            await pic.download(imgurl)
+            pic = await R.download_img(imgurl, 'storimg/rank', img)
             pics.append(pic.open().convert('RGBA'))
     rpic = util.concat_pic(pics, 0, 0)
     rpic.convert('RGB').save(Rank(area).rankp.path)

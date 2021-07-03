@@ -27,7 +27,7 @@ required_ranges = {
     "ac_type": (0, 1, 0)
 }
 
-airconsdata = data('groupfun/aircon.json', 'json')
+airconsdata = data('groupfun', 'aircon.json')
 
 
 def sgn(diff):

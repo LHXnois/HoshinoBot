@@ -8,7 +8,7 @@ from nonebot.message import CanceledException
 from .log import new_logger
 from . import config
 
-__version__ = 'Kokkoro Edition v1.2.1'
+__version__ = 'Kokkoro Edition v1.3.0'
 
 _bot = None
 HoshinoBot = nonebot.NoneBot

@@ -6,7 +6,7 @@ import jieba
 sv = Service('dayreport', enable_on_default=False, bundle='fun')
 Gening = False
 stopwords = R.data(
-    'groupfun/dayreport/stopwords/baidu_stopwords.txt', 'txt').read
+    'groupfun/dayreport/stopwords', 'baidu_stopwords.txt').read
 @sv.on_message()
 async def msgstore(bot, ev: CQEvent):
     if Gening:
@@ -17,16 +17,13 @@ async def msgstore(bot, ev: CQEvent):
         return
     msg = jieba.cut(msg)
     msg = " ".join(msg)
-    data = R.data(f'groupfun/dayreport/{gid}.json', 'json')
-    if not data.exist:
-        cont = []
-    else:
-        cont = data.read
+    data = R.data('groupfun/dayreport', f'{gid}.json', default=list())
+    cont = data.read
     cont.append(msg)
     data.write(cont)
 
 def genimg(gid):
-    data = R.data(f'groupfun/dayreport/{gid}.json', 'json')
+    data = R.data('groupfun/dayreport', f'{gid}.json')
     if data.exist:
         cont = data.read
         if len(cont) > 10:
@@ -53,7 +50,7 @@ async def genreport():
                     group_id=gid,
                     message='本日词云\n'+pic
                 )
-        if (i := R.data(f'groupfun/dayreport/{gid}.json', 'json')).exist:
+        if (i := R.data('groupfun/dayreport', f'{gid}.json')).exist:
             i.delete()
     Gening = False
 

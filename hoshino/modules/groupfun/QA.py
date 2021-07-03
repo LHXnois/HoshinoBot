@@ -82,11 +82,8 @@ async def stor_pic(msg: str, stor=True) -> str:
     for i in msg:
         if i['type'] == 'image':
             if stor:
-                imgname = i['data']['file']
-                imgurl = i['data']['url']
-                img = R.tem_img('QA', imgname)
-                await img.download(imgurl)
-                i['data']['file'] = os.path.basename(img.path)
+                img = await R.download_img_form_msg(i, 'QA')
+                i['data']['file'] = img.file + img.suffix
             i['data'].pop('url')
     return str(msg)
 

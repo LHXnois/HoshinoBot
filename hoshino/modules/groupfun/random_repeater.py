@@ -87,11 +87,8 @@ async def _repeater(bot, ev, if_daduan=0):
         return
     first_msg = ev.message[0]
     if first_msg['type'] == 'image':
-        img = first_msg['data']['url']
-        # img = await R.tem_gocqimg(img)
-        imgname = first_msg['data']['file']
-        img = await R.tem_img(
-            f'groupfun/random_repeater/{imgname}').download(img)
+        img = await R.download_img_form_msg(
+            first_msg, 'groupfun/random_repeater')
         image = img.open()
         turnAround = random.randint(0, 6)
         if image.format == 'GIF':

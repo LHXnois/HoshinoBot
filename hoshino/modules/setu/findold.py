@@ -11,8 +11,8 @@ _max = 5
 EXCEED_NOTICE = f'您今天已经冲过{_max}次了，请明早5点后再来！'
 _nlmt = DailyNumberLimiter(_max)
 _flmt = FreqLimiter(5)
-oldsetu_folder = R.img('setu/oldimgs/').path
-maxdeep = len(os.listdir(oldsetu_folder))
+oldsetu_folder = 'setu/oldimgs/'
+maxdeep = len(os.listdir(R.get('tem/img/', oldsetu_folder).path))
 sv = Service('findold', manage_priv=priv.SUPERUSER,
              enable_on_default=True, help_=f'''考 古 发 现
 取自一位一般互联网用户的qq图片文件夹）
@@ -24,16 +24,18 @@ ppps: 目前最大深度 {maxdeep-1}''', bundle='setu')
 
 DEEPTH_NOT_EXIT = 404
 DEEPTH_CLEAR = 200
+
+
 def oldsetu_gener(deepth=0, num=1):
     locate = maxdeep - deepth
-    dirpath = os.path.join(oldsetu_folder, str(locate))
-    if not os.path.exists(dirpath):
+    if not (picdir := R.get('tem/img/', oldsetu_folder, str(locate))).exist:
         return DEEPTH_NOT_EXIT
-    data = R.data(f'setu/oldimgs/{locate}.json', 'json')
-    if not data.exist or data.read['left'] == 0:
-        filelist = os.listdir(dirpath)
-        maxnum = len(filelist)
-        if not maxnum:
+    data = R.data('setu/oldimgs', f'{locate}.json', default={
+            'left': 0,
+    })
+    if (filedata := data.read)['left'] == 0:
+        filelist = os.listdir(picdir.path)
+        if not (maxnum := len(filelist)):
             return DEEPTH_NOT_EXIT
         random.shuffle(filelist)
         filedata = {
@@ -41,10 +43,12 @@ def oldsetu_gener(deepth=0, num=1):
             'maxnum': maxnum,
             'data': filelist
         }
-    else:
-        filedata = data.read
     num = min(num, filedata['left'])
-    pic = [R.img(dirpath, filedata['data'].pop()) for _ in range(num)]
+    pic = [R.tem_img(
+        oldsetu_folder,
+        str(locate),
+        filedata['data'].pop()
+        ).hexie for _ in range(num)]
     filedata['left'] -= num
     data.write(filedata)
     return (pic, filedata['left'], filedata['maxnum'])

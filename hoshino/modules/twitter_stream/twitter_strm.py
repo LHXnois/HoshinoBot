@@ -266,7 +266,7 @@ async def disaddfollow(bot, ev: CQEvent):
     router.follows.pop(kw)
     cfg.follows["lhx-favorite-twitter"].remove(kw)
     cfg.lhx_fav.write(cfg.follows["lhx-favorite-twitter"])
-    databin = R.data('twitter/lhx_fav_bin.json', 'json')
+    databin = R.data('twitter', 'lhx_fav_bin.json')
     if not databin.exist:
         databin.write([kw])
     else:
@@ -277,7 +277,7 @@ async def disaddfollow(bot, ev: CQEvent):
 
 @sucmd('重载推特订阅', force_private=False)
 async def reloadfollow(session: CommandSession):
-    lhx_fav_data = R.data('twitter/lhx_fav.json', 'json')
+    lhx_fav_data = R.data('twitter', 'lhx_fav.json')
 
     if not lhx_fav_data.exist:
         await session.finish('找不到lhx_fav.json')

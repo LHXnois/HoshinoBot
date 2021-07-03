@@ -18,7 +18,7 @@ sv = hoshino.Service('pcr_calendar', help_=HELP_STR, bundle='pcr查询')
 group_data = {}
 
 
-calendardata = R.data('priconne/calendar.json', 'json')
+calendardata = R.data('priconne', 'calendar.json')
 icon = 'https://lolibest.ltd/kokkoro_stamp.ico'
 
 
