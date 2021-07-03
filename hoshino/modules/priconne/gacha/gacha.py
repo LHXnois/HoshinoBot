@@ -94,7 +94,9 @@ class Gacha(object):
         self.s2_prob = pool["s2_prob"]
         self.s1_prob = 1000 - self.s2_prob - self.s3_prob
         self.up = pool["up"]
-        self.star3 = self.del_up(pool["star3"])+self.del_up(pool["star3_f"])*2
+        self.star3 = self.del_up(pool["star3"])
+        if self.fes:
+            self.star3 += self.del_up(pool["star3_f"])*2
         self.star2 = pool["star2"]
         self.star1 = pool["star1"] + pool['star1_f'] + pool['star1_up']*2
 
