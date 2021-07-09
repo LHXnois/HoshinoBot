@@ -66,7 +66,7 @@ async def query_setu(r18=0, keyword=None):
         return image_list
 
     data = {}
-    url = 'https://api.lolicon.app/setu'
+    url = 'https://api.lolicon.app/setu/v1'
     params = {
         'apikey': apikey,
         'r18': r18,

@@ -95,7 +95,7 @@ async def storQA(bot, ev: CQEvent, gid: int, uid: int) -> str:
         msg = str(ev.message).split('你随机答', 1)
         single = False
         if len(msg) != 2:
-            await bot.finish(ev)
+            return
     if msg[0] == '':
         await bot.finish(ev, '问题不能为空哦')
     if msg[1] == '':
