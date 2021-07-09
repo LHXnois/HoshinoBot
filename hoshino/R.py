@@ -2,13 +2,13 @@ import os
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 
-from PIL import Image, ImageFont, ImageDraw, ImageFilter
+from PIL import Image, ImageFont, ImageDraw
 from aiocqhttp.message import Message
 
 import hoshino
 from hoshino import util, aiorequests
 from hoshino.config import Proxies
-from hoshino.typing import Union, MessageSegment, List, CaseInsensitiveDict
+from hoshino.typing import Union, MessageSegment, CaseInsensitiveDict
 
 import re
 import random
@@ -147,30 +147,6 @@ class TemImg(ResImg):
         else:
             return super().path
 
-    async def download(self, url: str, use_proxie=False, proxies=Proxies, typecheck=True):
-        hoshino.logger.info(f'download_tem_img from {url}')
-        if use_proxie:
-            resp = await aiorequests.get(url, stream=True, proxies=proxies)
-        else:
-            resp = await aiorequests.get(url, stream=True)
-        hoshino.logger.debug(f'status_code={resp.status_code}')
-        if 200 == resp.status_code:
-            try:
-                if 'content-type' in resp.headers and not re.search(
-                        r'image',
-                        resp.headers['content-type'],
-                        re.I) and typecheck:
-                    return
-                content = await resp.content
-                self.addsuffix(content=content)
-                hoshino.logger.debug(f'is image, saving to {self.path}')
-                with open(self.path, 'wb') as f:
-                    f.write(content)
-                    hoshino.logger.debug('saved!')
-                    return self
-            except Exception as e:
-                hoshino.logger.exception(e)
-
     @property
     def url(self):
         """资源文件的url，供酷Q（或其他远程服务）使用"""
@@ -196,18 +172,6 @@ class TemImg(ResImg):
                 hoshino.logger.exception(e)
                 return MessageSegment.text('[图片出错]')
 
-    def addsuffix(self, suffix: str = None, content=None):
-        if os.path.splitext(self.path)[1]:
-            return
-        if not suffix:  # 没有指定后缀，自动识别后缀名
-            try:
-                self.suffix = filetype.guess_mime(
-                    content).split('/')[1]
-            except Exception:
-                raise ValueError('不是有效文件类型')
-                suffix = 'png'
-        self.__path = self.__path+'.'+suffix
-
     @property
     def hexie(self):
         if self.suffix not in ('.gif', '.GIF'):
@@ -229,7 +193,6 @@ class TemVideo(ResObj):
 
     def __init__(self, res_path):
         super().__init__(res_path)
-        self.filename = os.path.splitext(os.path.basename(self.path))[0]
         if not self.exist:
             dirpath = os.path.split(self.path)[0]
             if not os.path.exists(dirpath):
@@ -238,9 +201,9 @@ class TemVideo(ResObj):
 
     @property
     def gif(self):
-        giftem = tem_img('vedio2gif', self.filename+'.gif')
+        giftem = tem_img('vedio2gif', self.file+'.gif')
         cache = mpe.VideoFileClip(self.path)
-        #todo toobiggif
+        # todo toobiggif
         cache.write_gif(giftem.path)
         return giftem
 
@@ -311,9 +274,7 @@ async def download_img(url: str, *paths,
                        headers: dict = None,
                        **args) -> TemImg:
     if paths:
-        # path = os.path.join('tem/img', *paths)
-        tem = tem_img(*paths)
-        if tem.exist and cache:
+        if (tem := tem_img(*paths)).exist and cache:
             return tem
         filename = tem.file
         suffix = tem.suffix
