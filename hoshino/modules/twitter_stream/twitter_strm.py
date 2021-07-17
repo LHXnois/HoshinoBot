@@ -231,7 +231,7 @@ async def open_stream(client: PeonyClient):
 
 @sv.on_prefix('推特订阅', only_to_me=True)
 async def addfollow(bot, ev: CQEvent):
-    kw = ev.message.extract_plain_text().strip().split()
+    kw = ev.message.extract_plain_text().strip().replace('@', ' ').split()
     count = 0
     router = Tm.router
     for i in kw:
